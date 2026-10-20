@@ -79,7 +79,8 @@ requests! {
     SessionsLocate, SESSIONS_LOCATE = "sessions/locate": harness::Locate => harness::Located, seconds(10),
         [NOT_FOUND];
     /// A conversation's events after a cursor (§4.1).
-    SessionsRead, SESSIONS_READ = "sessions/read": harness::Read => harness::Events, seconds(10), [];
+    SessionsRead, SESSIONS_READ = "sessions/read": harness::Read => harness::Events, seconds(10),
+        [NOT_FOUND, REFUSED];
     /// The events of records a plugin door carried (§4.1).
     SessionsFold, SESSIONS_FOLD = "sessions/fold": harness::Fold => harness::Folded, seconds(10),
         [SELECTION_UNSUPPORTED];

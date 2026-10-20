@@ -298,7 +298,7 @@ absent.
 | `setup/plan` | `{mcp_url, skill, hook, door, release, timeout}` | `{found?: Found, refused?, entries: [Entry], notes: [string], install?: {argv, about}}` |
 | `sessions/list` | `{seen_since?, transcripts: [path]}` | `{sessions: [Session], excluded: [string], complete}` |
 | `sessions/locate` | `{external_id}` | `{session: Session}`; refused `not-found` |
-| `sessions/read` | `{external_id, sub_agent?, cursor?, tail?}` | `{cursor, events: [Event], more, reset, whole, after?}` |
+| `sessions/read` | `{external_id, sub_agent?, cursor?, tail?}` | `{cursor, events: [Event], more, reset, whole, after?}`; refused `not-found`, `refused` |
 | `sessions/fold` | `{external_id, sub_agent?, cursor?, records: [Record], quiet}` | `{cursor, events: [Event], consumed}`; refused `selection-unsupported` |
 | `hook/read` | `{event, document, env}` | `{moment?: Moment}` |
 | `hook/answer` | `{event, document, env, answer: Answer}` | `{stdout, exit_code, append?: {path, text}}` |
@@ -396,6 +396,10 @@ after `cursor`:
 - `cursor` may be one `sessions/fold` answered: the read goes on after the last record
   that fold consumed, where the transcript holds it on the history it has now; where it
   holds it off that history, `reset`; where it holds it not yet, no events.
+- Refused `not-found` where the conversation or sub-agent is not here, and `refused`,
+  with its line, where this one conversation cannot be read as the harness keeps it — a
+  transcript whose history reaches a record the host does not hold reads as no shorter
+  conversation. Both are answers about that conversation, never a fault of the driver.
 
 **`sessions/fold`** answers the events of records a driver whose `facts.door` is `plugin`
 was given from its plugin's `entries` frames (§4.4), folded exactly as `sessions/read`

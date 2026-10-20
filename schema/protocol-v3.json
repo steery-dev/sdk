@@ -6027,12 +6027,23 @@
           ],
           "description": "How the turn ends, unless a later line says otherwise."
         },
+        "events": {
+          "description": "The events of the named conversation this line says, each under the id\n`sessions/read` gives the same fact.",
+          "items": {
+            "$ref": "#/$defs/Event"
+          },
+          "type": "array"
+        },
         "named": {
           "description": "The conversation the harness named.",
           "type": "string"
         },
         "refused": {
           "description": "The refusal word a line of standard error means.",
+          "type": "string"
+        },
+        "title": {
+          "description": "The title the harness gave the named conversation.",
           "type": "string"
         },
         "took": {

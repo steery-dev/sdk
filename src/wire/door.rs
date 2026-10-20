@@ -193,7 +193,12 @@ pub enum Ask {
     /// [`super::harness::Text`].
     Recap { id: String },
     /// Forget everything before a cut in favour of `summary`; answered with [`DoorCompacted`].
-    Compact { id: String, before: u64, summary: String, least: u64 },
+    Compact {
+        id: String,
+        before: u64,
+        summary: String,
+        least: u64,
+    },
 }
 
 /// When door words go in.

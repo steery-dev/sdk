@@ -141,10 +141,7 @@ impl Example {
         if folder.is_dir() {
             Ok(folder)
         } else {
-            Err(Error::refused(
-                refusal::NOT_FOUND,
-                format!("no host {id}"),
-            ))
+            Err(Error::refused(refusal::NOT_FOUND, format!("no host {id}")))
         }
     }
 

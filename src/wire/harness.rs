@@ -54,6 +54,9 @@ pub enum HookKind {
     Notification,
     /// A sub-agent starts: no claim about a turn.
     SubAgentStart,
+    /// What the conversation runs on changed (its model): no claim about a turn, and
+    /// nothing else of where it stands.
+    Changed,
 }
 
 /// How a moment reaches the runtime.
@@ -800,6 +803,16 @@ pub struct Moment {
     /// The share of the context window left, 0 to 1.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub context_left: Option<f64>,
+    /// The model it runs on now, where the moment says: state, never an event.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    /// How hard it thinks now, in the harness's own word, where the moment says: state,
+    /// never an event.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thinking: Option<String>,
+    /// At a `turn_end` whose `outcome` is `failed`: why, where the harness says.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub failure: Option<Failure>,
     /// At a `permission`: the harness's own ways to allow such calls from now on, in its
     /// order; `always: {suggestion: n}` is the n-th.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

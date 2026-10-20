@@ -3883,6 +3883,10 @@
           "additionalProperties": false,
           "description": "The first frame, within 5 s.",
           "properties": {
+            "cwd": {
+              "description": "The folder the conversation runs in, as the harness holds it now.",
+              "type": "string"
+            },
             "door": {
               "description": "The door version the plugin speaks.",
               "format": "uint32",

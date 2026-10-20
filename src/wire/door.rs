@@ -1,6 +1,8 @@
 //! The plugin door, version 1 (PROTOCOL.md §4.4): WebSocket text frames between Steery's
 //! plugin in a harness and the runtime's loopback listener, each tagged by `t`.
 
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -51,6 +53,9 @@ pub enum PluginFrame {
         lead: Option<SessionRef>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         state: Option<LiveState>,
+        /// The folder the conversation runs in, as the harness holds it now.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        cwd: Option<PathBuf>,
     },
     /// The whole state, when it changes.
     State { state: LiveState },

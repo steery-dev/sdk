@@ -717,7 +717,7 @@ stays. Every time is milliseconds since 1970.
 
 **Hello.** The plugin's first frame, within 5 s:
 
-`{t: "hello", door: 1, harness, pid, session_id, mode, lead?, state?}`
+`{t: "hello", door: 1, harness, pid, session_id, mode, lead?, state?, cwd?}`
 
 - `door`: the door version the plugin speaks.
 - `harness`: the id of a driver whose `facts.door` is `plugin`.
@@ -729,6 +729,9 @@ stays. Every time is milliseconds since 1970.
 - `lead?`: `{harness, external_id}` where the copy is a sub-agent's: the conversation
   it works in. A copy whose lead it cannot name opens no door.
 - `state?`: a LiveState (§4.3), as `state` frames send it.
+- `cwd?`: the folder the conversation runs in now, as its moments' `Moment.cwd` says
+  it: where the runtime opens or hands over the conversation before any moment came.
+  A runtime older than this field refuses a hello carrying it (4400).
 
 The runtime answers `{t: "welcome", door: 1, entries?: {after?}}`, or closes with a code.
 A plugin that is welcomed to another door version sends nothing more and waits for the

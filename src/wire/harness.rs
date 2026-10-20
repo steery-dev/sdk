@@ -1219,7 +1219,7 @@ pub enum Stream {
 }
 
 /// What a turn's line says.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct TurnLine {
@@ -1235,6 +1235,13 @@ pub struct TurnLine {
     /// The refusal word a line of standard error means.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub refused: Option<String>,
+    /// The events of the named conversation this line says, each under the id
+    /// `sessions/read` gives the same fact.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub events: Vec<Event>,
+    /// The title the harness gave the named conversation.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
 }
 
 /// How a turn ended.

@@ -524,7 +524,7 @@ named for it (Claude Code's `CLAUDE_ENV_FILE`).
 | `idle` | `{external_id}` | `{sample?: Sample}` | none |
 | `models` | `{}` | `{models: [Model], unlisted?: {thinking}, watch: [path]}` | `no-binary`, `refused` |
 | `start` | `{act, external_id?, cwd, folder, worktree, model?, thinking?, reads}` | `{argv, env, cwd, stdin: "words" \| "none" \| "held", inbox}` | `not-found`, `no-place`, `model-missing`, `selection-unsupported`, `no-binary`, `start-failed` |
-| `turn/read` | `{turn, stream: "stdout" \| "stderr", line, delivery?}` | `{named?, took?, ended?: {state, error?}, refused?}` | none |
+| `turn/read` | `{turn, stream: "stdout" \| "stderr", line, delivery?}` | `{named?, took?, ended?: {state, error?}, refused?, events: [Event], title?}` | none |
 | `stop` | `{external_id, holder}` | `{stopped, proof?}` | `not-stopped` |
 | `receipt/mark` | `{external_id}` | `{mark}` | `selection-unsupported` |
 | `receipt/find` | `{external_id, mark, delivery}` | `{found, owner?}` | `refused` |
@@ -606,6 +606,17 @@ harness named; `took` is true once a line shows the harness took the words that 
 says otherwise (a line written after the end says nothing); `refused` is the refusal word
 a line of standard error means. The runtime reads a turn as taken once it is named and,
 where the harness says it, `took`.
+
+`events` are the events of the named conversation the line says (§4.1), stamped as the
+harness stamped the line, before its transcript is read. Each is one `sessions/read`
+gives the same fact under the same id — `turn` of `turn_began` and `turn_ended`, `id` of
+`words`, `call.id` of `call_began` and `id` of `call_ended`, and a `count: total` of
+`tokens` by its numbers — so the runtime folds it once, whichever comes first. A fact
+whose id the transcript cannot give again is not an event here; the transcript's read
+of it stands (Codex: a person's words, a compaction). A `model` event has no id; one
+stamped before the model the runtime already folded does not replace it. `title` is the
+conversation's title as the harness named it on this line; the newest stands over the
+one `sessions/list` gives.
 
 **`stop`** is the graceful step only: the harness's own way to end a turn, for an
 `owner` or a `process` holder. The runtime sends the signals after it, through the

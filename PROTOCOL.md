@@ -177,9 +177,11 @@ A **Hook** is `{event, kind, via, says, waits?, env?}`:
 - `kind`: what the moment is. `session_start`, `prompt` (a person's instruction went in),
   `before_call`, `after_call`, `turn_end`, `session_end`, `permission` (the harness asks
   its person to allow a call), `notification` (the harness tells its person something),
-  `sub_agent_start`. The kind says what the agent is doing from then on: `prompt` and
-  `after_call` working, `before_call` waiting on the call, `turn_end`, `session_end`,
-  `permission` and `notification` nothing, `session_start` and `sub_agent_start` no claim.
+  `sub_agent_start`, `changed` (what the conversation runs on changed: its model). The
+  kind says what the agent is doing from then on: `prompt` and `after_call` working,
+  `before_call` waiting on the call, `turn_end`, `session_end`, `permission` and
+  `notification` nothing, `session_start` and `sub_agent_start` no claim. A `changed`
+  moment says nothing of where the conversation stands but its Moment's state fields.
 - `via`: `command`: the harness runs `<hook> <event>` (`setup/plan`'s `hook`) with its
   document on standard input; `door`: the plugin sends the harness's document over the
   door (§4.4). Either way the runtime reads the document with `hook/read`.
@@ -501,9 +503,16 @@ A **Moment** is what `hook/read` answers:
 | `person_exited` | At a `session_end`: the person left at the prompt, by the harness's own word that they are done. |
 | `prompt?` | At a `prompt`: the instruction, where the harness gives it. |
 | `context_left?` | 0 to 1. |
+| `model?`, `thinking?` | The model it runs on now and how hard it thinks, in the harness's own words, where the moment says. |
+| `failure?` | At a `turn_end` whose `outcome` is `failed`: the `Failure`, where the harness says why. |
 | `suggestions?` | At a `permission`: the harness's own ways to allow such calls from now on, in its order, each `{label, about}`: what a person reads for it (`Always Bash(cargo check:*)`) and one line on how far it reaches (`this project, for you`). `always: {suggestion: n}` is the n-th. Absent: none. |
 
 `hook/read` answers no `moment` for a document that is no moment Steery carries.
+
+`context_left`, `model`, `thinking` and `failure` are state, never events: no transcript
+record has the moment's id, so the runtime takes each as what the conversation stands at
+now, over what its events last said and under what its door says (§4.3), and counts
+nothing from them. A moment without one says nothing about it.
 
 An **Answer** is what the runtime decided: `{say?, decision?, lead?}`. `say` is a
 paragraph for the agent. `decision` is `{"allow": {reason, always?}}` or `{"deny":

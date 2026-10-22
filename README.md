@@ -10,7 +10,7 @@ and the means to write one.
 |---|---|
 | [PROTOCOL.md](PROTOCOL.md) | The protocol: every message, shape, refusal word and bound. |
 | [`steery-sdk`](src/lib.rs) | The Rust crate: the wire types, `serve` (a program's loop), the runtime's client, and the release manifest. |
-| [schema/protocol-v3.json](schema/protocol-v3.json) | Every shape as JSON Schema. |
+| [schema/protocol-v4.json](schema/protocol-v4.json) | Every shape as JSON Schema. |
 | [examples/driver](examples/driver) | The smallest driver. |
 | [examples/adapter](examples/adapter) | The smallest adapter that makes hosts. |
 
@@ -35,13 +35,13 @@ treats yours.
    SDK by git instead of by path:
 
    ```toml
-   steery-sdk = { git = "https://github.com/steery-dev/sdk", tag = "v3.2.0" }
+   steery-sdk = { git = "https://github.com/steery-dev/sdk", tag = "v4.0.0" }
    ```
 
 2. Change the id, label and facts in `initialize` to your harness's (PROTOCOL.md §3.1),
    and answer the methods of the levels you declare (§4): `observe` first — `setup/plan`,
-   `sessions/list`, `sessions/locate`, `sessions/read`, and your hooks — then `drive` to
-   start and stop turns, then `live` to reach a running conversation.
+   `sessions/list`, `sessions/locate`, `sessions/read`, `mcp/list`, and your hooks — then
+   `drive` to start and stop turns, then `live` to reach a running conversation.
 3. Check it as you go. Install Steery (`curl -fsSL https://steery.dev/install.sh | sh -s
    -- --install-only`), then:
 

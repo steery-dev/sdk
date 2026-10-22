@@ -1,9 +1,9 @@
-# The program protocol, version 3
+# The program protocol, version 4
 
 The one contract between Steery's runtime (`steery`) and every **driver** and **adapter**,
 and between the runtime's control and a remote host (§6). It is published under MIT in
 [steery-dev/sdk](https://github.com/steery-dev/sdk) with `steery-sdk`, the Rust crate that
-implements it, and the JSON Schema [`schema/protocol-v3.json`](schema/protocol-v3.json),
+implements it, and the JSON Schema [`schema/protocol-v4.json`](schema/protocol-v4.json),
 which holds every shape below. Steery's own drivers
 ([steery-dev/drivers](https://github.com/steery-dev/drivers)) and adapters
 ([steery-dev/adapters](https://github.com/steery-dev/adapters)) are programs like any
@@ -88,7 +88,7 @@ The runtime's first request. Nothing else is sent before its answer.
 
 ```json
 {"jsonrpc": "2.0", "id": "1", "method": "initialize",
- "params": {"protocol": [3], "runtime": {"release": "7.0.0", "os": "linux", "arch": "x86_64"},
+ "params": {"protocol": [3, 4], "runtime": {"release": "7.0.0", "os": "linux", "arch": "x86_64"},
             "home": "/home/ada", "config": "/home/ada/.config/steery",
             "settings": {"DAYTONA_API_KEY": "…"}}}
 ```
@@ -96,9 +96,11 @@ The runtime's first request. Nothing else is sent before its answer.
 `protocol` lists the versions the runtime speaks; `settings` holds the values the person
 gave for the settings the program declared (§3.4), and nothing else.
 
-The answer is `{protocol, program, harness | machine, settings}`. It names one version;
-the runtime closes a program that names one it did not offer. `program` is
-`{id, kind, release, label, short, tint?, mark?}`:
+The answer is `{protocol, program, harness | machine, settings}`. It names one version:
+the newest offered that the program speaks (`steery_sdk::pick`), so a program on version
+4 answers 3 to a runtime that offers only 3. The runtime closes a program that names one
+it did not offer, and asks a program only the methods of the version it named. `program`
+is `{id, kind, release, label, short, tint?, mark?}`:
 
 - `id` is lowercase kebab-case, at most 64 characters: what `Session.harness` names for a
   driver, and the machine's adapter for an adapter. One computer has one program per id.
@@ -118,7 +120,7 @@ Every surface Steery draws a harness or a machine on — its apps, its web pages
 ### 3.1 A driver
 
 ```json
-{"protocol": 3,
+{"protocol": 4,
  "program": {"id": "omp", "kind": "harness", "release": "1.0.0", "label": "omp", "short": "omp",
              "tint": "#6e62a8", "mark": "M4 4h16v16H4z"},
  "harness": {
@@ -304,6 +306,21 @@ absent.
 | `sessions/fold` | `{external_id, sub_agent?, cursor?, records: [Record], quiet}` | `{cursor, events: [Event], consumed}`; refused `selection-unsupported` |
 | `hook/read` | `{event, document, env}` | `{moment?: Moment}` |
 | `hook/answer` | `{event, document, env, answer: Answer}` | `{stdout, exit_code, append?: {path, text}}` |
+| `mcp/list` (version 4) | `{cwd?}` | `{servers: [{server, url?}], complete, watch: [path]}` |
+
+**`mcp/list`** answers the MCP servers the harness loads, so Steery can tell which
+conversation or machine reaches a service. Without `cwd`: the person's own servers, those
+every conversation loads. With `cwd`: those a conversation started in that folder loads,
+as the harness itself decides — its project files only where the harness would read them
+(a trusted or approved folder), with the person's own, less those the harness turns off
+there. `server` is the harness's name for it; `url`, for a server reached over a URL, is
+that URL's scheme, host, port and path, and nothing else (`McpServer::new` makes it).
+Nothing else of an entry leaves the machine: no command, argument, environment, header,
+token or OAuth field, and nothing of a server over standard input and output but its name.
+`complete` is false where servers may also come from somewhere the driver cannot read:
+plugins, an account's connectors, configuration an administrator manages. `watch` names
+the files whose change changes the answer; the runtime asks again when one changes, as for
+`models`.
 
 **`hook/read`** reads one hook's document, a string: the standard input of a command
 hook, or the `document` of a door's `moment` frame (§4.4) as its JSON text, read exactly
@@ -1196,7 +1213,7 @@ reaches the person. The plugin door adds two words of its own (§4.4), defined i
 | Method | Answer within |
 |---|---|
 | `initialize`, `shutdown`, `host/hello` | 10 s |
-| `setup/plan`, `models`, `sessions/list` | 30 s |
+| `setup/plan`, `models`, `sessions/list`, `mcp/list` | 30 s |
 | `sessions/read`, `sessions/fold`, `sessions/locate`, `hook/read`, `hook/answer`, `held`, `start`, `turn/read`, `terminal`, `reader`, `reader/read`, `receipt/mark` | 10 s |
 | `idle`, `receipt/find` | 20 s |
 | `say`, `pick` | 10 s |
@@ -1216,12 +1233,13 @@ the `records` of one `sessions/fold`, so each stays within its 16 MiB frame or l
 
 ## 10. Versions
 
-This is version 3. Its shapes are strict (§2): a program or runtime rejects a field it
+This is version 4. Its shapes are strict (§2): a program or runtime rejects a field it
 does not know, so any change to a shape, a method, a word or a meaning is a new protocol
 number, never an extension of this one. The runtime offers every number it speaks and the
-program picks one; `steery-sdk`'s major version is the protocol it speaks. Version 3 is
-version 2 with one rename: what an adapter makes is a **host**, so `machine.provides` is
-`hosts`, its methods are `hosts/*` (§5.2), each names one by `host`, and `hosts/list`
-answers `{hosts}`; nothing else changed. Version 2 was
+program picks one; `steery-sdk`'s major version is the protocol it speaks, and it speaks
+every version still offered (`steery_sdk::PROTOCOLS`). Version 4 is version 3 with one
+method, `mcp/list` (§4.1); nothing else changed. Version 3 was version 2 with one rename:
+what an adapter makes is a **host**, so `machine.provides` is `hosts`, its methods are
+`hosts/*` (§5.2), each names one by `host`, and `hosts/list` answers `{hosts}`. Version 2 was
 version 1 with a program's look (`short` required, `tint`, `mark`) and the release
 manifest (§7.1). The plugin door (§4.4) is numbered on its own, in its `hello`.

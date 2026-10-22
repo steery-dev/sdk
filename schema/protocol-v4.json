@@ -3411,6 +3411,63 @@
       ],
       "type": "object"
     },
+    "McpList": {
+      "additionalProperties": false,
+      "description": "`mcp/list` (protocol 4): whose MCP servers. Absent `cwd`: the person's own, those every\nconversation loads; present: those a conversation started in that folder loads.",
+      "properties": {
+        "cwd": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "McpServer": {
+      "additionalProperties": false,
+      "description": "One MCP server: its name, and for one reached over a URL that URL without its secrets.\nNothing else of an entry leaves the machine: no command, argument, environment, header,\ntoken or OAuth field.",
+      "properties": {
+        "server": {
+          "type": "string"
+        },
+        "url": {
+          "description": "Scheme, host, port and path only: no user, password, query or fragment.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "server"
+      ],
+      "type": "object"
+    },
+    "McpServers": {
+      "additionalProperties": false,
+      "description": "The MCP servers a harness loads.",
+      "properties": {
+        "complete": {
+          "description": "False where servers may also come from somewhere the driver cannot read: plugins,\nan account's connectors, configuration an administrator manages.",
+          "type": "boolean"
+        },
+        "servers": {
+          "description": "Each one, by its name in the harness.",
+          "items": {
+            "$ref": "#/$defs/McpServer"
+          },
+          "type": "array"
+        },
+        "watch": {
+          "description": "The files whose change changes the list.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "servers",
+        "complete",
+        "watch"
+      ],
+      "type": "object"
+    },
     "Minimum": {
       "additionalProperties": false,
       "description": "The oldest release of a harness a driver speaks to.",
@@ -6182,7 +6239,7 @@
       ]
     }
   },
-  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v3.json",
+  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v4.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "anyOf": [
     {
@@ -6504,6 +6561,15 @@
       "$ref": "#/$defs/Marked"
     },
     {
+      "$ref": "#/$defs/McpList"
+    },
+    {
+      "$ref": "#/$defs/McpServer"
+    },
+    {
+      "$ref": "#/$defs/McpServers"
+    },
+    {
       "$ref": "#/$defs/Minimum"
     },
     {
@@ -6783,6 +6849,6 @@
       "$ref": "#/$defs/Voice"
     }
   ],
-  "description": "Every shape of the Steery program protocol, version 3 (PROTOCOL.md), and the release manifest programs are published by.",
+  "description": "Every shape of the Steery program protocol, version 4 (PROTOCOL.md), and the release manifest programs are published by.",
   "title": "Protocol"
 }

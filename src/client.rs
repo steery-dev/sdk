@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::process::Stdio;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
 
 use serde_json::{Value, json};
@@ -66,6 +66,8 @@ pub struct Client {
     pending: Pending,
     notifications: Mutex<Option<mpsc::UnboundedReceiver<Notification>>>,
     next: AtomicU64,
+    /// The protocol version the program picked in `initialize`.
+    protocol: OnceLock<u32>,
     reader: tokio::task::JoinHandle<()>,
 }
 
@@ -105,13 +107,15 @@ impl Client {
             pending,
             notifications: Mutex::new(Some(notifications)),
             next: AtomicU64::new(1),
+            protocol: OnceLock::new(),
             reader,
         })
     }
 
     /// Send `initialize`, and read what the program is. A program that names a protocol
     /// version `params` did not offer, or breaks a rule [`wire::Initialized::check`]
-    /// reads, is [`CallError::Invalid`].
+    /// reads, is [`CallError::Invalid`]. The version it names is then
+    /// [`Client::protocol`].
     pub async fn initialize(
         &self,
         params: &wire::InitializeParams,
@@ -124,12 +128,22 @@ impl Client {
             )));
         }
         initialized.check().map_err(CallError::Invalid)?;
+        let _ = self.protocol.set(initialized.protocol);
         Ok(initialized)
     }
 
+    /// The protocol version the program picked, once it answered `initialize`.
+    pub fn protocol(&self) -> Option<u32> {
+        self.protocol.get().copied()
+    }
+
     /// Ask the request `M` with `params`, waiting at most its bound (PROTOCOL.md §9), and
-    /// read its answer as its result.
+    /// read its answer as its result. A request newer than the version the program picked
+    /// is [`CallError::Unknown`], and is never sent.
     pub async fn ask<M: method::Method>(&self, params: &M::Params) -> Result<M::Result, CallError> {
+        if self.protocol().is_some_and(|picked| picked < M::SINCE) {
+            return Err(CallError::Unknown);
+        }
         let params = serde_json::to_value(params).map_err(|e| CallError::Invalid(e.to_string()))?;
         let answer = self.call(M::NAME, params, M::BOUND).await?;
         serde_json::from_value(answer).map_err(|e| CallError::Invalid(e.to_string()))
@@ -389,5 +403,214 @@ mod tests {
             exited.is_some(),
             "the program that held a torn line is killed"
         );
+    }
+
+    /// The test that is the program the next test runs: this test binary, run again with
+    /// [`PROGRAM`] set, serves [`Lister`] on its standard input and output.
+    const PROGRAM: &str = "STEERY_SDK_TEST_PROGRAM";
+
+    /// The URLs [`Lister`]'s harness names its servers by, as its configuration spells
+    /// them; each `hunter2` is a secret.
+    const URLS: &[(&str, Option<&str>)] = &[
+        (
+            "tracker",
+            Some("https://bot:hunter2@mcp.example.com:8443/v1/mcp?token=hunter2#hunter2"),
+        ),
+        ("socket", Some("wss://hunter2@mcp.example.com/ws")),
+        ("slash", Some("https://bot:hunter2/x@mcp.example.com/mcp")),
+        (
+            "question",
+            Some("https://bot:hunter2?x@mcp.example.com/mcp"),
+        ),
+        (
+            "digits",
+            Some("https://bot:2222/hunter2@mcp.example.com/mcp"),
+        ),
+        ("loopback", Some("http://[::1]:7000/mcp")),
+        ("files", None),
+    ];
+
+    /// A driver whose harness loads the servers [`URLS`] names, and in a folder one more.
+    struct Lister;
+
+    impl crate::Program for Lister {
+        fn initialize(
+            &self,
+            params: &wire::InitializeParams,
+        ) -> Result<wire::Initialized, crate::Error> {
+            let protocol = crate::pick(&params.protocol)
+                .ok_or_else(|| crate::Error::invalid("no protocol this driver speaks"))?;
+            Ok(wire::Initialized {
+                protocol,
+                program: wire::ProgramInfo {
+                    id: "lister".parse().map_err(crate::Error::invalid)?,
+                    kind: wire::Kind::Harness,
+                    release: "1.0.0".into(),
+                    label: "Lister".into(),
+                    short: "L".into(),
+                    tint: None,
+                    mark: None,
+                },
+                harness: Some(Box::new(wire::HarnessInfo {
+                    levels: vec![wire::Level::Observe],
+                    minimum: None,
+                    sign_in: None,
+                    knowing: "It has no conversations.".into(),
+                    transcript: None,
+                    identity: wire::Identity {
+                        executables: vec!["lister".into()],
+                        package: None,
+                        session_variable: None,
+                    },
+                    setup: wire::SetupFacts {
+                        reads_skills: false,
+                        cuts_tool_text: false,
+                        call_bound: None,
+                    },
+                    reader: None,
+                    facts: wire::HarnessFacts {
+                        by_file: false,
+                        resumes_in_place: false,
+                        forks_beside: false,
+                        keeps: wire::Keeps {
+                            model: false,
+                            thinking: false,
+                        },
+                        door: None,
+                        checks_idle: false,
+                        worktrees: false,
+                        acts: Vec::new(),
+                    },
+                    hooks: Vec::new(),
+                })),
+                machine: None,
+                settings: Vec::new(),
+            })
+        }
+
+        async fn call(&self, method: &str, params: Value) -> Result<Value, crate::Error> {
+            if method != method::MCP_LIST {
+                return Err(crate::Error::Unknown);
+            }
+            let asked: wire::harness::McpList = crate::params(params)?;
+            let mut servers: Vec<_> = URLS
+                .iter()
+                .map(|(server, url)| wire::harness::McpServer::new(*server, *url))
+                .collect();
+            if let Some(cwd) = asked.cwd {
+                servers.push(wire::harness::McpServer::new(
+                    cwd.display().to_string(),
+                    None,
+                ));
+            }
+            crate::result(wire::harness::McpServers {
+                servers,
+                complete: true,
+                watch: vec!["/home/a/.lister/mcp.json".into()],
+            })
+        }
+    }
+
+    /// The runtime offers 3 and 4: a program on this crate picks 4 and answers `mcp/list`
+    /// with each server's name and its URL bare, or no URL where its host cannot be told
+    /// from a password. Offered 3 alone it picks 3, and the client never sends `mcp/list`
+    /// to it; offered neither, it is refused.
+    #[tokio::test]
+    async fn a_program_offered_4_lists_its_mcp_servers_and_one_offered_3_is_never_asked() {
+        if std::env::var_os(PROGRAM).is_some() {
+            let served = crate::serve(|_notifier| Lister).await;
+            std::process::exit(i32::from(served.is_err()));
+        }
+        let start = || async {
+            let program = std::env::current_exe().unwrap();
+            let this = "client::tests::a_program_offered_4_lists_its_mcp_servers_and_one_offered_3_is_never_asked";
+            Client::spawn(
+                Path::new("env"),
+                &[
+                    format!("{PROGRAM}=1"),
+                    program.display().to_string(),
+                    "--exact".into(),
+                    this.into(),
+                    "--nocapture".into(),
+                ],
+                None,
+            )
+            .await
+            .unwrap()
+        };
+        let offer = |protocol: Vec<u32>| wire::InitializeParams {
+            protocol,
+            runtime: wire::Runtime {
+                release: "7.0.0".into(),
+                os: "linux".into(),
+                arch: "x86_64".into(),
+            },
+            home: "/home/a".into(),
+            config: "/home/a/.config/steery".into(),
+            settings: Default::default(),
+        };
+
+        let new = start().await;
+        assert_eq!(new.protocol(), None);
+        let initialized = new.initialize(&offer(vec![3, 4])).await.unwrap();
+        assert_eq!(initialized.protocol, 4);
+        assert_eq!(new.protocol(), Some(4));
+        let raw = new
+            .call(method::MCP_LIST, json!({}), Duration::from_secs(30))
+            .await
+            .unwrap();
+        assert_eq!(
+            raw,
+            json!({
+                "servers": [
+                    {"server": "tracker", "url": "https://mcp.example.com:8443/v1/mcp"},
+                    {"server": "socket", "url": "wss://mcp.example.com/ws"},
+                    {"server": "slash"},
+                    {"server": "question"},
+                    {"server": "digits"},
+                    {"server": "loopback", "url": "http://[::1]:7000/mcp"},
+                    {"server": "files"},
+                ],
+                "complete": true,
+                "watch": ["/home/a/.lister/mcp.json"],
+            })
+        );
+        assert!(!raw.to_string().contains("hunter2"), "{raw}");
+        let unknown = new
+            .call(
+                method::MCP_LIST,
+                json!({"folder": "/home/a"}),
+                Duration::from_secs(30),
+            )
+            .await;
+        assert!(matches!(unknown, Err(CallError::Invalid(_))), "{unknown:?}");
+        let in_folder = new
+            .ask::<method::McpList>(&wire::harness::McpList {
+                cwd: Some("/home/a/work".into()),
+            })
+            .await
+            .unwrap();
+        assert_eq!(
+            in_folder.servers.last(),
+            Some(&wire::harness::McpServer {
+                server: "/home/a/work".into(),
+                url: None,
+            })
+        );
+        new.shutdown().await.unwrap();
+
+        let old = start().await;
+        let initialized = old.initialize(&offer(vec![3])).await.unwrap();
+        assert_eq!(initialized.protocol, 3);
+        let asked = old
+            .ask::<method::McpList>(&wire::harness::McpList { cwd: None })
+            .await;
+        assert!(matches!(asked, Err(CallError::Unknown)), "{asked:?}");
+        old.shutdown().await.unwrap();
+
+        let none = start().await;
+        let refused = none.initialize(&offer(vec![2])).await;
+        assert!(matches!(refused, Err(CallError::Invalid(_))), "{refused:?}");
+        none.shutdown().await.unwrap();
     }
 }

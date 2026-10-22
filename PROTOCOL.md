@@ -304,6 +304,7 @@ absent.
 | `sessions/fold` | `{external_id, sub_agent?, cursor?, records: [Record], quiet}` | `{cursor, events: [Event], consumed}`; refused `selection-unsupported` |
 | `hook/read` | `{event, document, env}` | `{moment?: Moment}` |
 | `hook/answer` | `{event, document, env, answer: Answer}` | `{stdout, exit_code, append?: {path, text}}` |
+| `mcp/list` | `{place?}` | `{servers: [McpServer]}`; refused `no-binary`, `refused` |
 
 **`hook/read`** reads one hook's document, a string: the standard input of a command
 hook, or the `document` of a door's `moment` frame (§4.4) as its JSON text, read exactly
@@ -528,6 +529,26 @@ conversation's later processes should inherit. An empty Answer says nothing.
 `hook/answer` turns it into what the harness reads: the hook's standard output (empty:
 print nothing), its exit code, and `append`, a line the hook adds to a file the harness
 named for it (Claude Code's `CLAUDE_ENV_FILE`).
+
+**`mcp/list`** names the MCP servers the harness loads: without `place`, its person's own
+(user-level) servers; with `place`, an absolute folder, the servers a conversation started
+there loads, the user-level ones among them. A relative `place` is invalid (`-32602`). An
+**McpServer** is `{name, url?}`: `name` as the harness spells it, `url` only for a remote
+server. The driver reads the harness's own configuration, or asks the harness where it
+lists them itself, and applies the harness's own rules for a folder's servers: a server a
+project file names counts only where the harness would load it (the folder is trusted,
+the server approved, it is not turned off). Steery's own entry (`steery`, §4.1
+`setup/plan`) is never named. A list the driver cannot read is refused `refused` with
+the harness's line; a harness not on this machine where the driver must ask it, `no-binary`.
+
+No secret leaves the computer: `url` is the server's URL reduced to its scheme, host, port
+and path (`https://mcp.example.com:8443/mcp`), without its user, password, query or
+fragment, and nothing else of an entry is sent: no command, arguments, environment,
+headers, header helper, bearer token or OAuth field. A local (stdio) server is its name
+alone. `steery_sdk::wire::harness::McpServer::remote` reduces a URL so.
+
+`mcp/list` came in protocol 3 with `steery-sdk` 3.12.0 (§10): an older driver answers
+`-32601`, which the runtime reads as no list, and an older runtime never asks.
 
 ### 4.2 Drive
 
@@ -1196,7 +1217,7 @@ reaches the person. The plugin door adds two words of its own (§4.4), defined i
 | Method | Answer within |
 |---|---|
 | `initialize`, `shutdown`, `host/hello` | 10 s |
-| `setup/plan`, `models`, `sessions/list` | 30 s |
+| `setup/plan`, `models`, `sessions/list`, `mcp/list` | 30 s |
 | `sessions/read`, `sessions/fold`, `sessions/locate`, `hook/read`, `hook/answer`, `held`, `start`, `turn/read`, `terminal`, `reader`, `reader/read`, `receipt/mark` | 10 s |
 | `idle`, `receipt/find` | 20 s |
 | `say`, `pick` | 10 s |
@@ -1217,9 +1238,12 @@ the `records` of one `sessions/fold`, so each stays within its 16 MiB frame or l
 ## 10. Versions
 
 This is version 3. Its shapes are strict (§2): a program or runtime rejects a field it
-does not know, so any change to a shape, a method, a word or a meaning is a new protocol
-number, never an extension of this one. The runtime offers every number it speaks and the
-program picks one; `steery-sdk`'s major version is the protocol it speaks. Version 3 is
+does not know, so any change to a shape, a word or a meaning is a new protocol number,
+never an extension of this one. A new method is not: an older program answers it
+`-32601` (§2) and an older runtime never asks it, so a new method comes in a minor
+version of `steery-sdk` under the same number (`mcp/list`, 3.12.0, §4.1). The runtime
+offers every number it speaks and the program picks one; `steery-sdk`'s major version is
+the protocol it speaks. Version 3 is
 version 2 with one rename: what an adapter makes is a **host**, so `machine.provides` is
 `hosts`, its methods are `hosts/*` (§5.2), each names one by `host`, and `hosts/list`
 answers `{hosts}`; nothing else changed. Version 2 was

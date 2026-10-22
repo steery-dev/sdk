@@ -306,7 +306,7 @@ absent.
 | `sessions/fold` | `{external_id, sub_agent?, cursor?, records: [Record], quiet}` | `{cursor, events: [Event], consumed}`; refused `selection-unsupported` |
 | `hook/read` | `{event, document, env}` | `{moment?: Moment}` |
 | `hook/answer` | `{event, document, env, answer: Answer}` | `{stdout, exit_code, append?: {path, text}}` |
-| `mcp/list` (version 4) | `{cwd?}` | `{servers: [{server, url?}], complete, watch: [path]}` |
+| `mcp/list` (version 4) | `{cwd?}` | `{servers: [{server, url?}], complete, watch: [path]}`; refused `no-binary`, `refused` |
 
 **`mcp/list`** answers the MCP servers the harness loads, so Steery can tell which
 conversation or machine reaches a service. Without `cwd`: the person's own servers, those
@@ -320,7 +320,8 @@ token or OAuth field, and nothing of a server over standard input and output but
 `complete` is false where servers may also come from somewhere the driver cannot read:
 plugins, an account's connectors, configuration an administrator manages. `watch` names
 the files whose change changes the answer; the runtime asks again when one changes, as for
-`models`.
+`models`. A driver that lists through its harness's own command refuses `no-binary` where
+the harness is not here, and `refused`, with the harness's line, where it lists nothing.
 
 **`hook/read`** reads one hook's document, a string: the standard input of a command
 hook, or the `document` of a door's `moment` frame (§4.4) as its JSON text, read exactly

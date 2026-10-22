@@ -94,7 +94,8 @@ requests! {
     /// The runtime's answer as what a command hook prints (§4.1).
     HookAnswer, HOOK_ANSWER = "hook/answer": harness::HookAnswer => harness::HookAnswered, seconds(10), [];
     /// The MCP servers the harness loads, for the person or in one folder (§4.1).
-    McpList, MCP_LIST = "mcp/list": harness::McpList => harness::McpServers, seconds(30), [] since 4;
+    McpList, MCP_LIST = "mcp/list": harness::McpList => harness::McpServers, seconds(30),
+        [NO_BINARY, REFUSED] since 4;
     /// Who holds a conversation (§4.2).
     Held, HELD = "held": harness::Held => harness::HeldBy, seconds(10), [];
     /// What the driver can prove of a conversation now (§4.2).

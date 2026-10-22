@@ -3411,6 +3411,52 @@
       ],
       "type": "object"
     },
+    "McpList": {
+      "additionalProperties": false,
+      "description": "`mcp/list`: the MCP servers the harness loads.",
+      "properties": {
+        "place": {
+          "description": "An absolute folder: the servers a conversation started there loads. Absent: the\nperson's own (user-level) servers.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "McpServer": {
+      "additionalProperties": false,
+      "description": "One MCP server the harness loads: its name and, for a remote one, its URL without a\nsecret. Nothing else of the harness's entry leaves the computer.",
+      "properties": {
+        "name": {
+          "description": "Its name, as the harness spells it.",
+          "type": "string"
+        },
+        "url": {
+          "description": "A remote server's URL: scheme, host, port and path only.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "type": "object"
+    },
+    "McpServers": {
+      "additionalProperties": false,
+      "description": "What `mcp/list` answers.",
+      "properties": {
+        "servers": {
+          "description": "Each server, never Steery's own.",
+          "items": {
+            "$ref": "#/$defs/McpServer"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "servers"
+      ],
+      "type": "object"
+    },
     "Minimum": {
       "additionalProperties": false,
       "description": "The oldest release of a harness a driver speaks to.",
@@ -6502,6 +6548,15 @@
     },
     {
       "$ref": "#/$defs/Marked"
+    },
+    {
+      "$ref": "#/$defs/McpList"
+    },
+    {
+      "$ref": "#/$defs/McpServer"
+    },
+    {
+      "$ref": "#/$defs/McpServers"
     },
     {
       "$ref": "#/$defs/Minimum"

@@ -925,6 +925,67 @@ pub struct Append {
     pub text: String,
 }
 
+/// `mcp/list`: the MCP servers the harness loads.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct McpList {
+    /// An absolute folder: the servers a conversation started there loads. Absent: the
+    /// person's own (user-level) servers.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub place: Option<PathBuf>,
+}
+
+/// What `mcp/list` answers.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct McpServers {
+    /// Each server, never Steery's own.
+    pub servers: Vec<McpServer>,
+}
+
+/// One MCP server the harness loads: its name and, for a remote one, its URL without a
+/// secret. Nothing else of the harness's entry leaves the computer.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct McpServer {
+    /// Its name, as the harness spells it.
+    pub name: String,
+    /// A remote server's URL: scheme, host, port and path only.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+}
+
+impl McpServer {
+    /// A local (stdio) server: its name alone.
+    pub fn local(name: impl Into<String>) -> Self {
+        Self { name: name.into(), url: None }
+    }
+
+    /// A remote server, its `url` reduced to scheme, host, port and path: a user,
+    /// password, query or fragment, where a token may be, is dropped. A `url` that is no
+    /// absolute URL is not sent.
+    pub fn remote(name: impl Into<String>, url: &str) -> Self {
+        Self { name: name.into(), url: reduce(url) }
+    }
+}
+
+fn reduce(url: &str) -> Option<String> {
+    let (scheme, rest) = url.trim().split_once("://")?;
+    if scheme.is_empty() || !scheme.chars().all(|c| c.is_ascii_alphanumeric() || "+-.".contains(c)) {
+        return None;
+    }
+    let rest = &rest[..rest.find(['?', '#']).unwrap_or(rest.len())];
+    let (authority, path) = rest.split_at(rest.find('/').unwrap_or(rest.len()));
+    let host = authority.rsplit_once('@').map_or(authority, |(_, host)| host);
+    if host.is_empty() {
+        return None;
+    }
+    Some(format!("{}://{host}{path}", scheme.to_ascii_lowercase()))
+}
+
 // ---------------------------------------------------------------------------------------
 // Drive (§4.2)
 

@@ -304,7 +304,7 @@ absent.
 | `sessions/fold` | `{external_id, sub_agent?, cursor?, records: [Record], quiet}` | `{cursor, events: [Event], consumed}`; refused `selection-unsupported` |
 | `hook/read` | `{event, document, env}` | `{moment?: Moment}` |
 | `hook/answer` | `{event, document, env, answer: Answer}` | `{stdout, exit_code, append?: {path, text}}` |
-| `mcp/list` | `{place?}` | `{servers: [McpServer]}`; refused `no-binary`, `refused` |
+| `mcp/list` | `{place?}` | `{servers: [McpServer]}`; refused `no-binary`, `no-answer`, `refused` |
 
 **`hook/read`** reads one hook's document, a string: the standard input of a command
 hook, or the `document` of a door's `moment` frame (§4.4) as its JSON text, read exactly
@@ -538,8 +538,10 @@ server. The driver reads the harness's own configuration, or asks the harness wh
 lists them itself, and applies the harness's own rules for a folder's servers: a server a
 project file names counts only where the harness would load it (the folder is trusted,
 the server approved, it is not turned off). Steery's own entry (`steery`, §4.1
-`setup/plan`) is never named. A list the driver cannot read is refused `refused` with
-the harness's line; a harness not on this machine where the driver must ask it, `no-binary`.
+`setup/plan`) is never named. Where the driver must ask the harness, a harness not on this
+machine is refused `no-binary` and one that does not answer in time `no-answer`; a list the
+driver cannot read is refused `refused` with the harness's line. A server the harness
+fetches only as it runs (a Claude Code claude.ai connector) may be missing from the list.
 
 No secret leaves the computer: `url` is the server's URL reduced to its scheme, host, port
 and path (`https://mcp.example.com:8443/mcp`), without its user, password, query or

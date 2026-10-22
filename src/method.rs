@@ -90,7 +90,7 @@ requests! {
     HookAnswer, HOOK_ANSWER = "hook/answer": harness::HookAnswer => harness::HookAnswered, seconds(10), [];
     /// The MCP servers the harness loads, its person's own or a folder's (§4.1).
     McpList, MCP_LIST = "mcp/list": harness::McpList => harness::McpServers, seconds(30),
-        [NO_BINARY, REFUSED];
+        [NO_BINARY, NO_ANSWER, REFUSED];
     /// Who holds a conversation (§4.2).
     Held, HELD = "held": harness::Held => harness::HeldBy, seconds(10), [];
     /// What the driver can prove of a conversation now (§4.2).

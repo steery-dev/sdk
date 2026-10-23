@@ -1143,6 +1143,86 @@ pub struct Model {
     pub cost: Option<f64>,
 }
 
+/// `mcp/list` (protocol 4): whose MCP servers. Absent `cwd`: the person's own, those every
+/// conversation loads; present: those a conversation started in that folder loads.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct McpList {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cwd: Option<PathBuf>,
+}
+
+/// The MCP servers a harness loads.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct McpServers {
+    /// Each one, by its name in the harness.
+    pub servers: Vec<McpServer>,
+    /// False where servers may also come from somewhere the driver cannot read: plugins,
+    /// an account's connectors, configuration an administrator manages.
+    pub complete: bool,
+    /// The files whose change changes the list.
+    pub watch: Vec<PathBuf>,
+}
+
+/// One MCP server: its name, and for one reached over a URL that URL without its secrets.
+/// Nothing else of an entry leaves the machine: no command, argument, environment, header,
+/// token or OAuth field.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct McpServer {
+    pub server: String,
+    /// Scheme, host, port and path only: no user, password, query or fragment.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+}
+
+impl McpServer {
+    /// The server `server`, at `url` as its harness's configuration spells it, if it is
+    /// reached over one: kept to its scheme, host, port and path, and dropped where it
+    /// has no `scheme://`.
+    pub fn new(server: impl Into<String>, url: Option<&str>) -> Self {
+        Self {
+            server: server.into(),
+            url: url.and_then(bare_url),
+        }
+    }
+}
+
+/// `url` without its user, password, query and fragment, or none where it names no
+/// `scheme://host`. One whose host is followed by anything but a numeric port, or whose
+/// path holds an `@` its authority does not, is none: a password with an unescaped `/`,
+/// `?` or `#` would otherwise stand where the host does.
+fn bare_url(url: &str) -> Option<String> {
+    let (scheme, rest) = url.trim().split_once("://")?;
+    if scheme.is_empty()
+        || !scheme
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
+    {
+        return None;
+    }
+    let rest = &rest[..rest.find(['?', '#']).unwrap_or(rest.len())];
+    let (authority, path) = rest.split_at(rest.find('/').unwrap_or(rest.len()));
+    let host = match authority.rsplit_once('@') {
+        Some((_, host)) => host,
+        None if path.contains('@') => return None,
+        None => authority,
+    };
+    let port = match host.strip_prefix('[') {
+        Some(inside) => inside.split_once(']')?.1,
+        None => host.rsplit_once(':').map_or("", |(_, port)| port),
+    };
+    let port = port.strip_prefix(':').unwrap_or(port);
+    if host.is_empty() || host.starts_with(':') || !port.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    Some(format!("{scheme}://{host}{path}"))
+}
+
 /// `start`: the launch plan of a turn. It starts nothing.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]

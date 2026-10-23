@@ -21,6 +21,9 @@ pub trait Method {
     /// The refusal words it may answer with (PROTOCOL.md §4–§6, §8): a refusal with one of
     /// these is an answer the protocol gives it, any other a program's fault.
     const REFUSES: &'static [&'static str];
+    /// The first protocol version that has it (PROTOCOL.md §10): a runtime asks it only of
+    /// a program that picked this version or a newer one.
+    const SINCE: u32 = 3;
     /// Its parameters.
     type Params: Serialize + DeserializeOwned;
     /// Its result.
@@ -31,13 +34,14 @@ const fn seconds(seconds: u64) -> Duration {
     Duration::from_secs(seconds)
 }
 
-/// Every request: its name's const, its marker, its parameters, result, bound and refusal
-/// words; and [`bound`], which reads the same rows by name.
+/// Every request: its name's const, its marker, its parameters, result, bound, refusal
+/// words and, where it is newer than version 3, the version it came in; and [`bound`],
+/// which reads the same rows by name.
 macro_rules! requests {
     ($(
         $(#[$doc:meta])*
         $marker:ident, $name:ident = $value:literal: $params:ty => $result:ty, $bound:expr,
-            [$($refuses:ident),*];
+            [$($refuses:ident),*] $(since $since:literal)?;
     )*) => {
         $(pub const $name: &str = $value;)*
 
@@ -49,6 +53,7 @@ macro_rules! requests {
                 const NAME: &'static str = $name;
                 const BOUND: Duration = $bound;
                 const REFUSES: &'static [&'static str] = &[$(refusal::$refuses),*];
+                $(const SINCE: u32 = $since;)?
                 type Params = $params;
                 type Result = $result;
             }
@@ -88,6 +93,9 @@ requests! {
     HookRead, HOOK_READ = "hook/read": harness::HookRead => harness::HookMoment, seconds(10), [];
     /// The runtime's answer as what a command hook prints (§4.1).
     HookAnswer, HOOK_ANSWER = "hook/answer": harness::HookAnswer => harness::HookAnswered, seconds(10), [];
+    /// The MCP servers the harness loads, for the person or in one folder (§4.1).
+    McpList, MCP_LIST = "mcp/list": harness::McpList => harness::McpServers, seconds(30),
+        [NO_BINARY, REFUSED] since 4;
     /// Who holds a conversation (§4.2).
     Held, HELD = "held": harness::Held => harness::HeldBy, seconds(10), [];
     /// What the driver can prove of a conversation now (§4.2).

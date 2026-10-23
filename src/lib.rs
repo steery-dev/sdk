@@ -22,8 +22,19 @@ use serde_json::{Value, json};
 use tokio::io::{AsyncWriteExt, BufReader};
 use tokio::sync::mpsc;
 
-/// The protocol version this crate speaks.
-pub const PROTOCOL: u32 = 3;
+/// Every protocol version this crate speaks, oldest first: 4 is 3 with `mcp/list`
+/// (PROTOCOL.md §10). A program answers the newest of these the runtime offers.
+pub const PROTOCOLS: &[u32] = &[3, 4];
+
+/// The version a program answers `initialize` with: the newest of [`PROTOCOLS`] in
+/// `offered`, or none where the runtime offers none of them.
+pub fn pick(offered: &[u32]) -> Option<u32> {
+    PROTOCOLS
+        .iter()
+        .rev()
+        .copied()
+        .find(|version| offered.contains(version))
+}
 
 /// The words a program refuses with (PROTOCOL.md §8). The runtime and the server own what
 /// each one means; an unknown word reaches the person.

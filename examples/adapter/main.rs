@@ -14,7 +14,7 @@ use std::sync::OnceLock;
 
 use serde_json::Value;
 use steery_sdk::wire::{self, hosts};
-use steery_sdk::{Error, PROTOCOL, Program, method, params, refusal, result};
+use steery_sdk::{Error, Program, method, params, refusal, result};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> std::io::Result<()> {
@@ -29,14 +29,11 @@ struct Example {
 
 impl Program for Example {
     fn initialize(&self, params: &wire::InitializeParams) -> Result<wire::Initialized, Error> {
-        if !params.protocol.contains(&PROTOCOL) {
-            return Err(Error::invalid(format!(
-                "this adapter speaks protocol {PROTOCOL}"
-            )));
-        }
+        let protocol = steery_sdk::pick(&params.protocol)
+            .ok_or_else(|| Error::invalid("this adapter speaks protocols 3 and 4"))?;
         let _ = self.root.set(params.home.join(".example-hosts"));
         Ok(wire::Initialized {
-            protocol: PROTOCOL,
+            protocol,
             program: wire::ProgramInfo {
                 id: "example-hosts".parse().map_err(Error::invalid)?,
                 kind: wire::Kind::Machine,

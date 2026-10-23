@@ -393,12 +393,21 @@ mod tests {
             .call("process/list", json!({}), Duration::from_secs(5))
             .await;
         assert!(matches!(next, Err(CallError::Closed)), "{next:?}");
-        let exited = client
-            .child
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .try_wait()
-            .unwrap();
+        // The kill is a signal: the program's input closes before the system reports its
+        // exit, so the exit is waited for, not read once.
+        let mut exited = None;
+        for _ in 0..200 {
+            exited = client
+                .child
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .try_wait()
+                .unwrap();
+            if exited.is_some() {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
         assert!(
             exited.is_some(),
             "the program that held a torn line is killed"

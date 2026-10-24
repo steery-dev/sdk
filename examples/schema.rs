@@ -137,6 +137,7 @@ fn main() {
         harness::LiveTurn,
         harness::LiveCall,
         harness::LiveChild,
+        harness::LiveJob,
         harness::LiveEnded,
         harness::Dialog,
         harness::DialogKind,

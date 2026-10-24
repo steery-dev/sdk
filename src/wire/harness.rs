@@ -1719,6 +1719,9 @@ pub struct LiveCall {
     /// Calls running inside it.
     #[serde(default)]
     pub children: Vec<LiveChild>,
+    /// The background jobs it waits on that still run, oldest first, at most 8.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub jobs: Vec<LiveJob>,
 }
 
 /// A call running inside another.
@@ -1728,6 +1731,23 @@ pub struct LiveCall {
 pub struct LiveChild {
     pub id: String,
     pub tool: String,
+}
+
+/// A background job a call waits on.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct LiveJob {
+    /// What the harness calls it, often its command: at most 120 characters.
+    pub label: String,
+    /// When it began.
+    pub since: u64,
+    /// Its newest line of output, or its stage: at most 200 characters.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output: Option<String>,
+    /// When `output` last changed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output_at: Option<u64>,
 }
 
 /// A call that ended, at its true end.

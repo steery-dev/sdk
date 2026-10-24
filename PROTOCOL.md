@@ -725,7 +725,7 @@ carries:
 | `compacting`, `retrying` | The harness is compacting its context; waiting to retry a request. |
 | `jobs` | Background work running in the process that ends with it: jobs it runs and results waiting to be told. Absent: none. |
 | `model?`, `thinking?`, `context_left?` | What it runs on now; the share of its context window left. |
-| `calls` | `[{id, tool, since, children: [{id, tool}]}]`: the top-level calls running, oldest first, with calls running inside each; each `tool` named as a Call names it (§4.1), Steery's own as `mcp__steery__<tool>`. |
+| `calls` | `[{id, tool, since, children: [{id, tool}], jobs?: [{label, since, output?, output_at?}]}]`: the top-level calls running, oldest first, with calls running inside each; each `tool` named as a Call names it (§4.1), Steery's own as `mcp__steery__<tool>`. `jobs`: the background jobs a call waits on that still run, oldest first, at most 8, each with what the harness calls it (often its command, at most 120 characters), when it began, its newest line of output or its stage (at most 200 characters) and when that line last changed. Absent: none. |
 | `ended` | `[{id, at}]`: top-level calls that ended lately, oldest first, at most 64. Their times are the calls' true ends, over a transcript's. |
 | `dialog?` | `{kind: select \| confirm \| input \| editor \| custom, title, since}`: the harness's own dialog open in front of the person. |
 | `settled` | `[{began_at, at, says, failed, error?}]`: turns Steery's words began that ended, at most 16. |

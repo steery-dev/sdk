@@ -2993,6 +2993,13 @@
           "description": "The harness's id for it.",
           "type": "string"
         },
+        "jobs": {
+          "description": "The background jobs it waits on that still run, oldest first, at most 8.",
+          "items": {
+            "$ref": "#/$defs/LiveJob"
+          },
+          "type": "array"
+        },
         "since": {
           "description": "When it began.",
           "format": "uint64",
@@ -3064,6 +3071,37 @@
       "required": [
         "id",
         "at"
+      ],
+      "type": "object"
+    },
+    "LiveJob": {
+      "additionalProperties": false,
+      "description": "A background job a call waits on.",
+      "properties": {
+        "label": {
+          "description": "What the harness calls it, often its command: at most 120 characters.",
+          "type": "string"
+        },
+        "output": {
+          "description": "Its newest line of output, or its stage: at most 200 characters.",
+          "type": "string"
+        },
+        "output_at": {
+          "description": "When `output` last changed.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "since": {
+          "description": "When it began.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "label",
+        "since"
       ],
       "type": "object"
     },
@@ -6529,6 +6567,9 @@
     },
     {
       "$ref": "#/$defs/LiveEnded"
+    },
+    {
+      "$ref": "#/$defs/LiveJob"
     },
     {
       "$ref": "#/$defs/LiveSettled"

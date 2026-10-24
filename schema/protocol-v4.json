@@ -3551,6 +3551,10 @@
           },
           "type": "array"
         },
+        "signed_in": {
+          "description": "Whether the harness's own account is signed in here as of this listing, as the\nharness itself says: `true` signed in, `false` not; absent where the driver cannot\ntell.",
+          "type": "boolean"
+        },
         "unlisted": {
           "allOf": [
             {

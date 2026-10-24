@@ -1111,6 +1111,11 @@ pub struct Models {
     /// The files whose change changes the list.
     #[serde(default)]
     pub watch: Vec<PathBuf>,
+    /// Whether the harness's own account is signed in here as of this listing, as the
+    /// harness itself says: `true` signed in, `false` not; absent where the driver cannot
+    /// tell.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signed_in: Option<bool>,
 }
 
 /// What a model a harness does not list takes.

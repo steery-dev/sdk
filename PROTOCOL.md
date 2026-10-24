@@ -147,7 +147,7 @@ Every surface Steery draws a harness or a machine on — its apps, its web pages
 |---|---|
 | `levels` | `observe` (§4.1), `drive` (§4.2), `live` (§4.3). Each needs the one before it. `live` is named exactly when `facts.door` is. |
 | `minimum?` | `{release, update?}`: the oldest harness release the driver speaks to, and the command that updates it. The runtime compares it with `setup/plan`'s `found.release` and says the line itself. |
-| `sign_in?` | The action that signs a person in, as a person reads it: `run /login`. |
+| `sign_in?` | What a person does to log the harness's own account in, as they read it on their phone and do at the machine, completing "{harness} is not logged in on {machine}: …": a command they run in a terminal there, ``run `claude auth login` in a terminal``, never a command only inside the harness's own window. |
 | `knowing` | How an agent in this harness learns its conversation's id; Steery's skill carries it. |
 | `transcript?` | One line on how the harness's transcript file reads, for a reader handed one. Absent: the harness keeps no transcript file, and a carry refuses. |
 | `identity` | How the runtime recognizes the harness's processes (§3.3): `{executables, package?, session_variable?}`. |
@@ -553,7 +553,7 @@ named for it (Claude Code's `CLAUDE_ENV_FILE`).
 |---|---|---|---|
 | `held` | `{external_id}` | a Holder, or `{look: {transcripts, strays, beyond?}}` | none |
 | `idle` | `{external_id}` | `{sample?: Sample}` | none |
-| `models` | `{}` | `{models: [Model], unlisted?: {thinking}, watch: [path]}` | `no-binary`, `refused` |
+| `models` | `{}` | `{models: [Model], unlisted?: {thinking}, watch: [path], signed_in?: bool}` | `no-binary`, `refused` |
 | `start` | `{act, external_id?, cwd, folder, worktree, model?, thinking?, reads}` | `{argv, env, cwd, stdin: "words" \| "none" \| "held", inbox}` | `not-found`, `no-place`, `model-missing`, `selection-unsupported`, `no-binary`, `start-failed` |
 | `turn/read` | `{turn, stream: "stdout" \| "stderr", line, delivery?}` | `{named?, took?, ended?: {state, error?}, refused?, events: [Event], title?}` | none |
 | `stop` | `{external_id, holder}` | `{stopped, proof?}` | `not-stopped` |
@@ -603,9 +603,16 @@ harness's own words, `cost` US dollars per million input tokens where the harnes
 `unlisted` says the harness also runs models it does not list; one seen in a conversation
 is offered with `unlisted.thinking`. `watch` names the files whose change changes the
 list (configuration, sign-ins, a model cache); the runtime asks again when one changes,
-and at least every 10 minutes. A harness not on this machine is refused `no-binary`; a
-list it cannot read (its person must sign in first) is refused `refused` with the
-harness's line. The runtime keeps the last list.
+and at least every 10 minutes. `signed_in` is what the harness itself says of its own
+account here as of this listing, asked the harness's own way (Claude Code: `claude auth
+status`): `true` signed in, `false` not; absent where the driver cannot tell. `false`
+makes the harness read not logged in on this machine, with `sign_in` (§3.1) as what the
+person does; `true` lifts every failure to sign in that was seen there before it, so a
+person who logged in outside Steery is not held signed out until a run succeeds. A
+driver that can tell lists its sign-in files in `watch`, so a login is seen at once. A
+harness not on this machine is refused `no-binary`; a list it cannot read (its person
+must sign in first) is refused `refused` with the harness's line. The runtime keeps the
+last list.
 
 **`start`** starts nothing; it answers a launch plan. The runtime has made the turn's
 `folder`, writes the words to it, adds `STEERY_STARTED` (and `STEERY_COMPACT` where it

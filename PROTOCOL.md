@@ -299,7 +299,7 @@ absent.
 
 | Method | Params | Result |
 |---|---|---|
-| `setup/plan` | `{mcp_url, skill, hook, door, release, timeout}` | `{found?: Found, refused?, entries: [Entry], notes: [string], install?: {argv, about}}` |
+| `setup/plan` | `{mcp_url, skill, hook, door, release, timeout, trusts?}` | `{found?: Found, refused?, entries: [Entry], notes: [string], install?: {argv, about}}` |
 | `sessions/list` | `{seen_since?, transcripts: [path]}` | `{sessions: [Session], excluded: [string], complete}` |
 | `sessions/locate` | `{external_id}` | `{session: Session}`; refused `not-found` |
 | `sessions/read` | `{external_id, sub_agent?, cursor?, tail?}` | `{cursor, events: [Event], more, reset, whole, after?}`; refused `not-found`, `refused` |
@@ -332,7 +332,11 @@ person, are the driver's alone, so the plugin sends the harness's payload as it 
 **`setup/plan`** is given Steery's MCP URL; the skill's Markdown; `hook`, the command line
 a hook runs, to which the hook's `event` is added as one more argument; `door`, the
 runtime's loopback door URL (§4.4); the runtime's release; `timeout`, the seconds an MCP
-entry gives one call. It answers what it found (`{binary,
+entry gives one call; and `trusts?`, the folders of a host an adapter made for its
+conversations (§5.2), whose terminal nobody opens to answer a harness that runs only in a
+folder its person trusted: a driver whose harness asks that plans each of these, and the
+folders under it, trusted as its person would. It is absent on a person's own computer,
+where nothing is trusted for them. It answers what it found (`{binary,
 release, root}`, absent where the harness is not installed), `refused?` (one line:
 why Steery does not set this harness up here), `install?`, and the entries.
 

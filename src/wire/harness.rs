@@ -106,6 +106,12 @@ pub struct Setup {
     pub release: String,
     /// The seconds an MCP entry gives one call.
     pub timeout: u32,
+    /// Folders a harness that runs only where a person trusted the folder may run in here,
+    /// trusted as that person would: those of a host an adapter made for its conversations,
+    /// whose terminal nobody opens to answer the harness's prompt. Empty on a person's own
+    /// computer, where the person trusts a folder themselves.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub trusts: Vec<PathBuf>,
 }
 
 /// The harness found here, and the entries that set it up.

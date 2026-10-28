@@ -723,6 +723,7 @@ carries:
 | `pending?` | Words wait to go in. |
 | `typing?` | The person's editor holds text. Absent: it cannot say. |
 | `compacting`, `retrying` | The harness is compacting its context; waiting to retry a request. |
+| `retry?` | `{attempt, of?, error?}`: while it waits to retry, the try that failed: which try it was (the first 1), how many it makes before it gives up, and what went wrong in its own words (at most 600 characters). Absent where the harness said nothing of it. |
 | `jobs` | Background work running in the process that ends with it: jobs it runs and results waiting to be told. Absent: none. |
 | `model?`, `thinking?`, `context_left?` | What it runs on now; the share of its context window left. |
 | `calls` | `[{id, tool, since, children: [{id, tool}], jobs?: [{label, since, output?, output_at?}]}]`: the top-level calls running, oldest first, with calls running inside each; each `tool` named as a Call names it (§4.1), Steery's own as `mcp__steery__<tool>`. `jobs`: the background jobs a call waits on that still run, oldest first, at most 8, each with what the harness calls it (often its command, at most 120 characters), when it began, its newest line of output or its stage (at most 200 characters) and when that line last changed. Absent: none. |

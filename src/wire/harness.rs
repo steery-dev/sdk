@@ -1649,6 +1649,10 @@ pub struct LiveState {
     /// The harness waits to retry a request.
     #[serde(default)]
     pub retrying: bool,
+    /// While it waits to retry: the try that failed, as the harness said it. Absent where
+    /// it said nothing of it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retry: Option<LiveRetry>,
     /// Background work running in the process that ends with it: jobs it runs and results
     /// waiting to be told.
     #[serde(default, skip_serializing_if = "is_zero")]
@@ -1703,6 +1707,21 @@ pub struct LiveTurn {
     /// The ids of `say`s it took as Steery's.
     #[serde(default)]
     pub says: Vec<String>,
+}
+
+/// The try a harness waits to retry, as it said it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct LiveRetry {
+    /// Which try of the request failed, the first 1.
+    pub attempt: u32,
+    /// How many tries it makes before it gives up.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub of: Option<u32>,
+    /// What went wrong, in the harness's own words: at most 600 characters.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
 }
 
 /// A tool call running.

@@ -2,7 +2,7 @@
 name = "steery-sdk"
 # The SDK's own version, not Steery's: a program's Cargo.lock records it, so it moves only
 # when this crate's API does. Its major is the protocol it speaks (PROTOCOL.md).
-version = "4.2.0"
+version = "4.3.0"
 edition = "2024"
 rust-version = "1.89"
 license = "MIT"

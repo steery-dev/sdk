@@ -135,6 +135,7 @@ fn main() {
         harness::SessionChanged,
         harness::LiveState,
         harness::LiveTurn,
+        harness::LiveRetry,
         harness::LiveCall,
         harness::LiveChild,
         harness::LiveJob,

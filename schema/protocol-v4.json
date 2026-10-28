@@ -3105,6 +3105,32 @@
       ],
       "type": "object"
     },
+    "LiveRetry": {
+      "additionalProperties": false,
+      "description": "The try a harness waits to retry, as it said it.",
+      "properties": {
+        "attempt": {
+          "description": "Which try of the request failed, the first 1.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "error": {
+          "description": "What went wrong, in the harness's own words: at most 600 characters.",
+          "type": "string"
+        },
+        "of": {
+          "description": "How many tries it makes before it gives up.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "attempt"
+      ],
+      "type": "object"
+    },
     "LiveSettled": {
       "additionalProperties": false,
       "description": "A turn Steery's words began that ended.",
@@ -3197,6 +3223,14 @@
         "pending": {
           "description": "Words wait to go in.",
           "type": "boolean"
+        },
+        "retry": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/LiveRetry"
+            }
+          ],
+          "description": "While it waits to retry: the try that failed, as the harness said it. Absent where\nit said nothing of it."
         },
         "retrying": {
           "default": false,
@@ -6574,6 +6608,9 @@
     },
     {
       "$ref": "#/$defs/LiveJob"
+    },
+    {
+      "$ref": "#/$defs/LiveRetry"
     },
     {
       "$ref": "#/$defs/LiveSettled"

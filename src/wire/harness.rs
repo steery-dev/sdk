@@ -752,27 +752,43 @@ pub struct Call {
     pub response: Option<String>,
 }
 
-/// What kind of tool a call is.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(rename_all = "kebab-case")]
-pub enum Group {
-    Shell,
-    FilesRead,
-    FilesEdit,
-    Search,
-    Web,
-    Browser,
-    Code,
-    Agents,
-    Plan,
-    Ask,
-    Steery,
-    Memory,
-    Harness,
-    Media,
-    Custom,
-    Mcp,
+/// An enum of unit variants with `ALL`, every variant in the order declared, both from one
+/// list: a variant added is in `ALL` at once.
+macro_rules! listed {
+    ($(#[$meta:meta])* $vis:vis enum $name:ident { $($variant:ident),+ $(,)? }) => {
+        $(#[$meta])*
+        $vis enum $name { $($variant),+ }
+
+        impl $name {
+            /// Every one, in the order declared.
+            pub const ALL: &'static [$name] = &[$($name::$variant),+];
+        }
+    };
+}
+
+listed! {
+    /// What kind of tool a call is.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+    #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+    #[serde(rename_all = "kebab-case")]
+    pub enum Group {
+        Shell,
+        FilesRead,
+        FilesEdit,
+        Search,
+        Web,
+        Browser,
+        Code,
+        Agents,
+        Plan,
+        Ask,
+        Steery,
+        Memory,
+        Harness,
+        Media,
+        Custom,
+        Mcp,
+    }
 }
 
 /// What a call puts to the person inside the harness.

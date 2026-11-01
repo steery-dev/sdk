@@ -6494,7 +6494,7 @@
           "type": "string"
         },
         "ends_at": {
-          "description": "When what it holds ends (a sign-in started for it), in Unix seconds.",
+          "description": "When what it holds ends (a sign-in started for it), in milliseconds since 1970 (§2).",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"

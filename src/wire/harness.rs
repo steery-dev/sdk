@@ -174,7 +174,7 @@ pub struct Way {
     /// What its person types, each given back by its `name`.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub fields: Vec<Field>,
-    /// When what it holds ends (a sign-in started for it), in Unix seconds.
+    /// When what it holds ends (a sign-in started for it), in milliseconds since 1970 (§2).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ends_at: Option<u64>,
 }

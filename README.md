@@ -35,7 +35,7 @@ treats yours.
    SDK by git instead of by path:
 
    ```toml
-   steery-sdk = { git = "https://github.com/steery-dev/sdk", tag = "v5.0.0" }
+   steery-sdk = { git = "https://github.com/steery-dev/sdk", tag = "v5.1.0" }
    ```
 
 2. Change the id, label and facts in `initialize` to your harness's (PROTOCOL.md §3.1),

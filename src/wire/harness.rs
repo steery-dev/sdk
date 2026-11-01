@@ -134,10 +134,119 @@ pub struct Planned {
     /// driver can install it: its vendor's own installer.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub install: Option<Install>,
+    /// What the harness lacks here that only its person can give (a sign-in, a setting),
+    /// each asked on one card and given back by `needs/give`; version 5 only, empty in an
+    /// older one.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub needs: Vec<Need>,
+}
+
+/// What a harness lacks on this host that only its person can give, and the ways they can.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct Need {
+    /// The same for this lack in every plan (`sign-in`): what `needs/give` names.
+    pub id: String,
+    /// The card's title: a short question its person answers (`Sign Claude Code in?`).
+    pub title: String,
+    /// What is missing and what it stops, in one line.
+    pub line: String,
+    /// Each way its person can give it, the driver's pick first; at least one.
+    pub ways: Vec<Way>,
+}
+
+/// One way a person gives what a harness lacks.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct Way {
+    /// The same for this way of its need in every plan (`api-key`).
+    pub id: String,
+    /// What it does, in a few plain words (`Use your API key`).
+    pub label: String,
+    /// Its cost or risk, in one line.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub about: Option<String>,
+    /// The page its person opens first: where a key is made, or an authorize page.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub link: Option<NeedLink>,
+    /// What its person types, each given back by its `name`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub fields: Vec<Field>,
+    /// When what it holds ends (a sign-in started for it), in Unix seconds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ends_at: Option<u64>,
+}
+
+/// A page a way's person opens.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct NeedLink {
+    /// What its button says.
+    pub label: String,
+    /// Its address.
+    pub url: String,
+    /// The field its return address fills, where the page sends the browser back to a
+    /// loopback address that the app that opened it catches.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fills: Option<String>,
+}
+
+/// One value a person types.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct Field {
+    /// Its name in `needs/give`'s `values`.
+    pub name: String,
+    /// What a person reads above it.
+    pub label: String,
+    /// Where its value comes from, in one line.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub about: Option<String>,
+    /// A secret: never shown again once typed.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub secret: bool,
+}
+
+/// `needs/give`: what a person gave for one need, by one of its ways.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct Give {
+    /// The need's `id`.
+    pub need: String,
+    /// The way's `id`.
+    pub way: String,
+    /// Each of the way's fields its person filled, by name.
+    #[serde(default)]
+    pub values: BTreeMap<String, String>,
+}
+
+/// What came of a [`Give`].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
+pub enum Given {
+    /// The need is met.
+    Done {
+        /// What came of it, in one line (`Signed in as ada@example.com`).
+        line: String,
+        /// Variables the runtime keeps for this harness on this machine, sealed, and adds
+        /// to every process of it on every host from now on; empty where what was given
+        /// stays in this host.
+        #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+        env: BTreeMap<String, String>,
+    },
+    /// One more step: this way is asked next (a started sign-in's link and code).
+    Next(Way),
 }
 
 /// A harness's vendor's own installer, which the runtime runs only once a person agreed
-/// (at a terminal, or by `steery setup --install`), shown to them as `about` and `argv`.
+/// (at a terminal, or by `steery setup --install`), shown to them as `about` and `argv`,
+/// or by itself on a host an adapter made from no source of its person's.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]

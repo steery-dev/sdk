@@ -22,9 +22,10 @@ use serde_json::{Value, json};
 use tokio::io::{AsyncWriteExt, BufReader};
 use tokio::sync::mpsc;
 
-/// Every protocol version this crate speaks, oldest first: 4 is 3 with `mcp/list`
-/// (PROTOCOL.md §10). A program answers the newest of these the runtime offers.
-pub const PROTOCOLS: &[u32] = &[3, 4];
+/// Every protocol version this crate speaks, oldest first: 4 is 3 with `mcp/list`, 5 is 4
+/// with needs (`setup/plan`'s `needs`, `needs/give`) (PROTOCOL.md §10). A program answers
+/// the newest of these the runtime offers.
+pub const PROTOCOLS: &[u32] = &[3, 4, 5];
 
 /// The version a program answers `initialize` with: the newest of [`PROTOCOLS`] in
 /// `offered`, or none where the runtime offers none of them.

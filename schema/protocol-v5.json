@@ -1471,6 +1471,33 @@
         }
       ]
     },
+    "Field": {
+      "additionalProperties": false,
+      "description": "One value a person types.",
+      "properties": {
+        "about": {
+          "description": "Where its value comes from, in one line.",
+          "type": "string"
+        },
+        "label": {
+          "description": "What a person reads above it.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Its name in `needs/give`'s `values`.",
+          "type": "string"
+        },
+        "secret": {
+          "description": "A secret: never shown again once typed.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "label"
+      ],
+      "type": "object"
+    },
     "File": {
       "additionalProperties": false,
       "description": "One build of a program: an archive holding exactly one regular file, the program's\nexecutable ([`executable`]).",
@@ -1840,6 +1867,81 @@
         "mode"
       ],
       "type": "object"
+    },
+    "Give": {
+      "additionalProperties": false,
+      "description": "`needs/give`: what a person gave for one need, by one of its ways.",
+      "properties": {
+        "need": {
+          "description": "The need's `id`.",
+          "type": "string"
+        },
+        "values": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "description": "Each of the way's fields its person filled, by name.",
+          "type": "object"
+        },
+        "way": {
+          "description": "The way's `id`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "need",
+        "way"
+      ],
+      "type": "object"
+    },
+    "Given": {
+      "description": "What came of a [`Give`].",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "description": "The need is met.",
+          "properties": {
+            "done": {
+              "additionalProperties": false,
+              "properties": {
+                "env": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Variables the runtime keeps for this harness on this machine, sealed, and adds\nto every process of it on every host from now on; empty where what was given\nstays in this host.",
+                  "type": "object"
+                },
+                "line": {
+                  "description": "What came of it, in one line (`Signed in as ada@example.com`).",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "line"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "done"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One more step: this way is asked next (a started sign-in's link and code).",
+          "properties": {
+            "next": {
+              "$ref": "#/$defs/Way"
+            }
+          },
+          "required": [
+            "next"
+          ],
+          "type": "object"
+        }
+      ]
     },
     "Group": {
       "description": "What kind of tool a call is.",
@@ -2754,7 +2856,7 @@
     },
     "Install": {
       "additionalProperties": false,
-      "description": "A harness's vendor's own installer, which the runtime runs only once a person agreed\n(at a terminal, or by `steery setup --install`), shown to them as `about` and `argv`.",
+      "description": "A harness's vendor's own installer, which the runtime runs only once a person agreed\n(at a terminal, or by `steery setup --install`), shown to them as `about` and `argv`,\nor by itself on a host an adapter made from no source of its person's.",
       "properties": {
         "about": {
           "description": "One line a person reads before agreeing, holding the exact command line `argv`\nruns and where it installs the harness.",
@@ -3762,6 +3864,61 @@
       ],
       "type": "object"
     },
+    "Need": {
+      "additionalProperties": false,
+      "description": "What a harness lacks on this host that only its person can give, and the ways they can.",
+      "properties": {
+        "id": {
+          "description": "The same for this lack in every plan (`sign-in`): what `needs/give` names.",
+          "type": "string"
+        },
+        "line": {
+          "description": "What is missing and what it stops, in one line.",
+          "type": "string"
+        },
+        "title": {
+          "description": "The card's title: a short question its person answers (`Sign Claude Code in?`).",
+          "type": "string"
+        },
+        "ways": {
+          "description": "Each way its person can give it, the driver's pick first; at least one.",
+          "items": {
+            "$ref": "#/$defs/Way"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "line",
+        "ways"
+      ],
+      "type": "object"
+    },
+    "NeedLink": {
+      "additionalProperties": false,
+      "description": "A page a way's person opens.",
+      "properties": {
+        "fills": {
+          "description": "The field its return address fills, where the page sends the browser back to a\nloopback address that the app that opened it catches.",
+          "type": "string"
+        },
+        "label": {
+          "description": "What its button says.",
+          "type": "string"
+        },
+        "url": {
+          "description": "Its address.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "url"
+      ],
+      "type": "object"
+    },
     "Notified": {
       "additionalProperties": false,
       "description": "`host/notified`: a program's notification, from the host.",
@@ -3976,6 +4133,13 @@
         "refused": {
           "description": "Why Steery does not set this harness up here, in one line.",
           "type": "string"
+        },
+        "needs": {
+          "description": "What the harness lacks here that only its person can give (a sign-in, a setting),\neach asked on one card and given back by `needs/give`; version 5 only, empty in an\nolder one.",
+          "items": {
+            "$ref": "#/$defs/Need"
+          },
+          "type": "array"
         }
       },
       "required": [
@@ -6320,9 +6484,53 @@
           "type": "string"
         }
       ]
+    },
+    "Way": {
+      "additionalProperties": false,
+      "description": "One way a person gives what a harness lacks.",
+      "properties": {
+        "about": {
+          "description": "Its cost or risk, in one line.",
+          "type": "string"
+        },
+        "ends_at": {
+          "description": "When what it holds ends (a sign-in started for it), in Unix seconds.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "fields": {
+          "description": "What its person types, each given back by its `name`.",
+          "items": {
+            "$ref": "#/$defs/Field"
+          },
+          "type": "array"
+        },
+        "id": {
+          "description": "The same for this way of its need in every plan (`api-key`).",
+          "type": "string"
+        },
+        "label": {
+          "description": "What it does, in a few plain words (`Use your API key`).",
+          "type": "string"
+        },
+        "link": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/NeedLink"
+            }
+          ],
+          "description": "The page its person opens first: where a key is made, or an authorize page."
+        }
+      },
+      "required": [
+        "id",
+        "label"
+      ],
+      "type": "object"
     }
   },
-  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v4.json",
+  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v5.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "anyOf": [
     {
@@ -6440,6 +6648,9 @@
       "$ref": "#/$defs/FailureKind"
     },
     {
+      "$ref": "#/$defs/Field"
+    },
+    {
       "$ref": "#/$defs/File"
     },
     {
@@ -6489,6 +6700,12 @@
     },
     {
       "$ref": "#/$defs/FsWrite"
+    },
+    {
+      "$ref": "#/$defs/Give"
+    },
+    {
+      "$ref": "#/$defs/Given"
     },
     {
       "$ref": "#/$defs/Group"
@@ -6675,6 +6892,12 @@
     },
     {
       "$ref": "#/$defs/Named"
+    },
+    {
+      "$ref": "#/$defs/Need"
+    },
+    {
+      "$ref": "#/$defs/NeedLink"
     },
     {
       "$ref": "#/$defs/Notified"
@@ -6936,8 +7159,11 @@
     },
     {
       "$ref": "#/$defs/Voice"
+    },
+    {
+      "$ref": "#/$defs/Way"
     }
   ],
-  "description": "Every shape of the Steery program protocol, version 4 (PROTOCOL.md), and the release manifest programs are published by.",
+  "description": "Every shape of the Steery program protocol, version 5 (PROTOCOL.md), and the release manifest programs are published by.",
   "title": "Protocol"
 }

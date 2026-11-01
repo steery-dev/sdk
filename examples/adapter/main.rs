@@ -30,7 +30,7 @@ struct Example {
 impl Program for Example {
     fn initialize(&self, params: &wire::InitializeParams) -> Result<wire::Initialized, Error> {
         let protocol = steery_sdk::pick(&params.protocol)
-            .ok_or_else(|| Error::invalid("this adapter speaks protocols 3 and 4"))?;
+            .ok_or_else(|| Error::invalid("this adapter speaks protocols 3, 4 and 5"))?;
         let _ = self.root.set(params.home.join(".example-hosts"));
         Ok(wire::Initialized {
             protocol,

@@ -1,9 +1,9 @@
-# The program protocol, version 4
+# The program protocol, version 5
 
 The one contract between Steery's runtime (`steery`) and every **driver** and **adapter**,
 and between the runtime's control and a remote host (§6). It is published under MIT in
 [steery-dev/sdk](https://github.com/steery-dev/sdk) with `steery-sdk`, the Rust crate that
-implements it, and the JSON Schema [`schema/protocol-v4.json`](schema/protocol-v4.json),
+implements it, and the JSON Schema [`schema/protocol-v5.json`](schema/protocol-v5.json),
 which holds every shape below. Steery's own drivers
 ([steery-dev/drivers](https://github.com/steery-dev/drivers)) and adapters
 ([steery-dev/adapters](https://github.com/steery-dev/adapters)) are programs like any
@@ -299,13 +299,14 @@ absent.
 
 | Method | Params | Result |
 |---|---|---|
-| `setup/plan` | `{mcp_url, skill, hook, door, release, timeout, trusts?}` | `{found?: Found, refused?, entries: [Entry], notes: [string], install?: {argv, about}}` |
+| `setup/plan` | `{mcp_url, skill, hook, door, release, timeout, trusts?}` | `{found?: Found, refused?, entries: [Entry], notes: [string], install?: {argv, about}, needs?: [Need]}` (`needs`: version 5) |
 | `sessions/list` | `{seen_since?, transcripts: [path]}` | `{sessions: [Session], excluded: [string], complete}` |
 | `sessions/locate` | `{external_id}` | `{session: Session}`; refused `not-found` |
 | `sessions/read` | `{external_id, sub_agent?, cursor?, tail?}` | `{cursor, events: [Event], more, reset, whole, after?}`; refused `not-found`, `refused` |
 | `sessions/fold` | `{external_id, sub_agent?, cursor?, records: [Record], quiet}` | `{cursor, events: [Event], consumed}`; refused `selection-unsupported` |
 | `hook/read` | `{event, document, env}` | `{moment?: Moment}` |
 | `hook/answer` | `{event, document, env, answer: Answer}` | `{stdout, exit_code, append?: {path, text}}` |
+| `needs/give` (version 5) | `{need, way, values: {name: value}}` | `{done: {line, env?}}` or `{next: Way}`; refused `not-found`, `refused` |
 | `mcp/list` (version 4) | `{cwd?}` | `{servers: [{server, url?}], complete, watch: [path]}`; refused `no-binary`, `refused` |
 
 **`mcp/list`** answers the MCP servers the harness loads, so Steery can tell which
@@ -350,11 +351,37 @@ this system: `argv`, the vendor's own installer (a vendor's documented `curl …
 run as written, `["sh", "-c", "curl … | sh"]`), and `about`, one line for a person that
 holds the exact command line `argv` runs and where it installs the harness. The runtime
 names no harness here: it shows `about` and `argv` both, runs `argv` only once a person
-agreed — chose it at a terminal and said yes, or passed `steery setup --install`; nothing
-is installed unattended without it — with the person's environment and no standard input,
+agreed — chose it at a terminal and said yes, or passed `steery setup --install`, or added
+a machine whose hosts an adapter makes (§5.2), where each host made from no source of its
+person's is given every harness its drivers can install; nothing else is installed
+unattended — with the person's environment and no standard input,
 through the operating-system adapter (`process/start`), within 10 minutes, its output
 kept in the host's Steery folder's `logs/`, and then asks `setup/plan` again. An installer
 that exits 0 and leaves `found` absent has failed.
+
+**Needs** (version 5). A **Need** is `{id, title, line, ways: [Way]}`: what the harness
+lacks on this host that only its person can give — a sign-in, a setting — never an entry
+Steery writes itself or an install. `id` is the same for that lack in every plan; `title`
+is a card's short question and `line` what is missing and what it stops, both in the
+driver's words. A **Way** is `{id, label, about?, link?: {label, url, fills?}, fields:
+[{name, label, about?, secret}], ends_at?}`: one way to give it, the driver's pick first.
+The runtime asks each need once, on one card of its person's, only while work on the
+machine needs it; the card offers each way with its fields, and the picked way's values go
+to `needs/give`. `link` is a page the person opens first; `fills` names the field its
+return fills, where the page sends the browser back to a loopback address the app that
+opened it catches. A `secret` is shown to nobody once typed.
+
+`needs/give` answers `{done: {line, env?}}`, the need met, or `{next: Way}`, one more step
+(a sign-in the driver started: its link and code), asked on a card of its own before
+`ends_at`. `env` holds variables the runtime keeps for this harness on this machine,
+sealed at mode 0600, and adds to the environment of the harness's driver and of every turn
+and read it plans, on every host, from then on; empty where what was given stays in this
+host. The runtime asks `setup/plan` again after each `done`. It refuses `not-found` for a
+need or way this host lacks no more, and `refused`, with one line, for values that do not
+give it (a key the vendor turned down, a code past its time): the person reads that line
+beside the way, asked again. A sign-in completes in the harness's own flow: the driver
+starts the harness's own sign-in and hands it the code; it never signs in to a vendor
+itself, and keeps nothing a sign-in gives.
 
 An **Entry** is `{path, format: "json" | "toml" | "text", at?, value, carries}`: an
 absolute file, and the place in it (a JSON Pointer or a TOML key path; absent: the whole
@@ -1246,11 +1273,13 @@ the `records` of one `sessions/fold`, so each stays within its 16 MiB frame or l
 
 ## 10. Versions
 
-This is version 4. Its shapes are strict (§2): a program or runtime rejects a field it
+This is version 5. Its shapes are strict (§2): a program or runtime rejects a field it
 does not know, so any change to a shape, a method, a word or a meaning is a new protocol
 number, never an extension of this one. The runtime offers every number it speaks and the
 program picks one; `steery-sdk`'s major version is the protocol it speaks, and it speaks
-every version still offered (`steery_sdk::PROTOCOLS`). Version 4 is version 3 with one
+every version still offered (`steery_sdk::PROTOCOLS`). Version 5 is version 4 with needs:
+`setup/plan`'s `needs` and one method, `needs/give` (§4.1); nothing else changed, so a
+driver that picked 4 answers no `needs`. Version 4 is version 3 with one
 method, `mcp/list` (§4.1); nothing else changed. Version 3 was version 2 with one rename:
 what an adapter makes is a **host**, so `machine.provides` is `hosts`, its methods are
 `hosts/*` (§5.2), each names one by `host`, and `hosts/list` answers `{hosts}`. Version 2 was

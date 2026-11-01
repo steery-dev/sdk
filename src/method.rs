@@ -78,6 +78,9 @@ requests! {
 
     /// The entries that set the harness up (§4.1).
     SetupPlan, SETUP_PLAN = "setup/plan": harness::Setup => harness::Planned, seconds(30), [];
+    /// What a person gave for one need of a plan's (§4.1).
+    NeedsGive, NEEDS_GIVE = "needs/give": harness::Give => harness::Given, seconds(30),
+        [NOT_FOUND, REFUSED] since 5;
     /// The conversations updated since a time (§4.1).
     SessionsList, SESSIONS_LIST = "sessions/list": harness::List => harness::Listed, seconds(30), [];
     /// One conversation by its id (§4.1).

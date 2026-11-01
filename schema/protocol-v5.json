@@ -4122,6 +4122,13 @@
           ],
           "description": "How the harness is installed here, where it is not (`found` absent) and its\ndriver can install it: its vendor's own installer."
         },
+        "needs": {
+          "description": "What the harness lacks here that only its person can give (a sign-in, a setting),\neach asked on one card and given back by `needs/give`; version 5 only, empty in an\nolder one.",
+          "items": {
+            "$ref": "#/$defs/Need"
+          },
+          "type": "array"
+        },
         "notes": {
           "default": [],
           "description": "Lines for a person about the setup.",
@@ -4133,13 +4140,6 @@
         "refused": {
           "description": "Why Steery does not set this harness up here, in one line.",
           "type": "string"
-        },
-        "needs": {
-          "description": "What the harness lacks here that only its person can give (a sign-in, a setting),\neach asked on one card and given back by `needs/give`; version 5 only, empty in an\nolder one.",
-          "items": {
-            "$ref": "#/$defs/Need"
-          },
-          "type": "array"
         }
       },
       "required": [

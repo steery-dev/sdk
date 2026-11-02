@@ -37,7 +37,7 @@ impl Example {
 impl Program for Example {
     fn initialize(&self, params: &wire::InitializeParams) -> Result<wire::Initialized, Error> {
         let protocol = steery_sdk::pick(&params.protocol)
-            .ok_or_else(|| Error::invalid("this driver speaks protocols 3, 4 and 5"))?;
+            .ok_or_else(|| Error::invalid("this driver speaks protocols 3, 4, 5 and 6"))?;
         let _ = self.home.set(params.home.clone());
         Ok(wire::Initialized {
             protocol,

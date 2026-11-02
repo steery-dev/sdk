@@ -23,9 +23,9 @@ use tokio::io::{AsyncWriteExt, BufReader};
 use tokio::sync::mpsc;
 
 /// Every protocol version this crate speaks, oldest first: 4 is 3 with `mcp/list`, 5 is 4
-/// with needs (`setup/plan`'s `needs`, `needs/give`) (PROTOCOL.md §10). A program answers
-/// the newest of these the runtime offers.
-pub const PROTOCOLS: &[u32] = &[3, 4, 5];
+/// with needs (`setup/plan`'s `needs`, `needs/give`), 6 is 5 with `call_ended`'s `waited`
+/// (PROTOCOL.md §10). A program answers the newest of these the runtime offers.
+pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6];
 
 /// The version a program answers `initialize` with: the newest of [`PROTOCOLS`] in
 /// `offered`, or none where the runtime offers none of them.

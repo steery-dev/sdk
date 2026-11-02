@@ -554,6 +554,13 @@ pub enum Event {
         /// Its last 8 lines.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         tail: Option<String>,
+        /// Version 6: the earlier calls of this conversation whose work this one waited on —
+        /// calls that returned while what they started (a command sent to the background, a
+        /// service, a sub-agent) went on running, which this call waited for, read from or
+        /// polled until it returned — each by its `call_began` id; empty where it waited on
+        /// none, and in an older version.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        waited: Vec<String>,
     },
     Tokens {
         at: u64,

@@ -1,9 +1,9 @@
-# The program protocol, version 5
+# The program protocol, version 6
 
 The one contract between Steery's runtime (`steery`) and every **driver** and **adapter**,
 and between the runtime's control and a remote host (§6). It is published under MIT in
 [steery-dev/sdk](https://github.com/steery-dev/sdk) with `steery-sdk`, the Rust crate that
-implements it, and the JSON Schema [`schema/protocol-v5.json`](schema/protocol-v5.json),
+implements it, and the JSON Schema [`schema/protocol-v6.json`](schema/protocol-v6.json),
 which holds every shape below. Steery's own drivers
 ([steery-dev/drivers](https://github.com/steery-dev/drivers)) and adapters
 ([steery-dev/adapters](https://github.com/steery-dev/adapters)) are programs like any
@@ -480,7 +480,7 @@ An **Event** is one of:
 | `words` | `at, id, voice: person \| agent \| thought \| tool \| summary, text, call?, clips: [Clip]` |
 | `rollback` | `at, turns`: the harness took back the newest `turns` person instructions |
 | `call_began` | `at, call: Call` |
-| `call_ended` | `at, id, ok, chars, tail?` |
+| `call_ended` | `at, id, ok, chars, tail?, waited?` (`waited`: version 6) |
 | `tokens` | `at, count: response \| total, response?, model?, input, cached, cache_write?, output, reasoning, context_left?` |
 | `model` | `at, model, provider?, thinking?` |
 | `sub_agent` | `at, external_id, call?, state?: running \| finished \| failed \| interrupted, error?` |
@@ -513,6 +513,14 @@ An **Event** is one of:
 - A **Question** is `{question, header?, multiple, options: [{label, description?,
   preview?}]}`.
 - `call_ended`: `chars` is the length of the result's text, `tail` its last 8 lines.
+  `waited` (version 6) names, by their `call_began` ids, the earlier calls of this
+  conversation whose work this call waited on: calls that returned while what they started
+  went on running — a command sent to the background, a service, a sub-agent run in the
+  background — which this call waited for, read the output of or polled until it returned
+  (omp's `wait` on its background jobs, Claude Code's `BashOutput` of a shell, Codex's
+  `write_stdin` to a running session). It is the harness's own record of what the call
+  waited on, read from its transcript; empty where the call waited on nothing it can name.
+  Steery counts the time a call waited as spent on the work it waited on.
 - `tokens`: `input` counts every token read, cache reads and writes included; `cached`
   and `cache_write?` are of `input` (absent: the harness does not say); `reasoning` is of
   `output`. `count: response` is one response's own count (named by `response`; one
@@ -1273,11 +1281,13 @@ the `records` of one `sessions/fold`, so each stays within its 16 MiB frame or l
 
 ## 10. Versions
 
-This is version 5. Its shapes are strict (§2): a program or runtime rejects a field it
+This is version 6. Its shapes are strict (§2): a program or runtime rejects a field it
 does not know, so any change to a shape, a method, a word or a meaning is a new protocol
 number, never an extension of this one. The runtime offers every number it speaks and the
 program picks one; `steery-sdk`'s major version is the protocol it speaks, and it speaks
-every version still offered (`steery_sdk::PROTOCOLS`). Version 5 is version 4 with needs:
+every version still offered (`steery_sdk::PROTOCOLS`). Version 6 is version 5 with one
+field, `call_ended`'s `waited` (§4.1); nothing else changed, so a driver that picked 5 or
+older says no `waited`. Version 5 is version 4 with needs:
 `setup/plan`'s `needs` and one method, `needs/give` (§4.1); nothing else changed, so a
 driver that picked 4 answers no `needs`. Version 4 is version 3 with one
 method, `mcp/list` (§4.1); nothing else changed. Version 3 was version 2 with one rename:

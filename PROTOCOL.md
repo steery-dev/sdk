@@ -878,7 +878,9 @@ forgotten.
   their message was written). `queued_at` without `taken_at`: held, not yet taken; the
   same say asked again is answered once they are taken, however long a call runs, or
   `refused` once the harness let them go unseen (its turn ended and its queue emptied
-  without them). An answer with neither stamp: taken, not dated.
+  without them). An answer with neither stamp: taken, not dated. The runtime asks a say
+  again with empty `words` to learn what became of it: an id the copy no longer remembers
+  is refused (no words), nothing handed.
 - `force` names a say whose words the harness holds and has not taken: the turn running is
   aborted, the conversation not parked, and the harness takes them as its next input;
   where it let them go with the abort, the copy hands them again, once. Words already

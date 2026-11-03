@@ -683,9 +683,9 @@ took the words, and true on the line that shows it took the words that carry
 `delivery`; `ended` is how the turn ends, where this line says so, unless a later line
 says otherwise (a line written after the end says nothing); `refused` is the refusal word
 a line of standard error means. The runtime reads a turn as taken once it is named,
-unless a line said `took: false` and no later line said `true`: until then its
-`delivery`, and the session's words behind it, wait, and a turn that ends first
-delivered nothing.
+unless its lines said `took: false` and never `true`: until then its `delivery`, and the
+session's words behind it, wait; a turn that ends first delivered nothing, and one that
+writes nothing for 10 minutes meanwhile is stopped.
 
 `events` are the events of the named conversation the line says (§4.1), stamped as the
 harness stamped the line, before its transcript is read. Each is one `sessions/read`

@@ -678,11 +678,14 @@ runtime reads as with `refused`. A connection refused means the turn is ending.
 **`turn/read`** reads one line of a turn's output. `turn` names one run, and the runtime
 gives every line of it in order from the first, under that name, also again after a
 restart, so a driver may keep state across lines. `named` is the conversation the
-harness named; `took` is true once a line shows the harness took the words that carry
+harness named; `took` is false on a line that names the conversation before the harness
+took the words, and true on the line that shows it took the words that carry
 `delivery`; `ended` is how the turn ends, where this line says so, unless a later line
 says otherwise (a line written after the end says nothing); `refused` is the refusal word
-a line of standard error means. The runtime reads a turn as taken once it is named and,
-where the harness says it, `took`.
+a line of standard error means. The runtime reads a turn as taken once it is named,
+unless a line said `took: false` and no later line said `true`: until then its
+`delivery`, and the session's words behind it, wait, and a turn that ends first
+delivered nothing.
 
 `events` are the events of the named conversation the line says (§4.1), stamped as the
 harness stamped the line, before its transcript is read. Each is one `sessions/read`

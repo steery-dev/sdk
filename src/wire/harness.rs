@@ -529,6 +529,10 @@ pub enum Event {
         id: String,
         voice: Voice,
         text: String,
+        /// The record these words are of, where one record says several (an agent's message
+        /// and its thinking); absent: `id`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        message: Option<String>,
         /// The call a `tool` voice's text belongs to.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         call: Option<String>,

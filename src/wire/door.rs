@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use super::harness::{LiveState, Record, SessionRef};
+use super::harness::{LiveState, Record, SessionRef, Voice};
 
 /// The door version this crate speaks.
 pub const DOOR: u32 = 1;
@@ -21,6 +21,11 @@ pub const RECORDS_MAX: usize = 8 << 20;
 pub const COMPACT_VAR: &str = "STEERY_COMPACT";
 /// The file beside that ask its answer frame is written to.
 pub const COMPACTED_FILE: &str = "compacted.json";
+/// The shortest time between two `live` frames of one message.
+pub const LIVE_EVERY_MS: u64 = 16;
+/// The most bytes of one `live` frame: a longer one sends its parts cut to fit, and the next
+/// frame goes on from there.
+pub const LIVE_FRAME_MAX: usize = 64 << 10;
 
 /// Close codes the runtime sends.
 pub mod close {
@@ -102,6 +107,76 @@ pub enum PluginFrame {
     /// The copy cannot continue from `welcome.entries.after`: this connection carries no
     /// entries.
     Lost { why: String },
+    /// The agent's message as it is being written; sent only on a connection welcomed with
+    /// `live`.
+    Live(Live),
+}
+
+/// One assistant message being written, as the harness has it so far.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct Live {
+    /// The harness's own identity of the message while it has no record: stable from its
+    /// first frame to its last.
+    pub message: String,
+    /// The newest piece, milliseconds since 1970 on the harness's clock.
+    pub at: u64,
+    /// The first piece of this message, on the same clock.
+    pub first_at: u64,
+    /// What changed, per voice.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parts: Vec<LivePart>,
+    /// The tool a call being formed names, before its input is sent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub forming: Option<String>,
+    /// The message ended. Sent once without `entry` when it ends, and again with it once the
+    /// harness has recorded it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub end: Option<LiveEnd>,
+}
+
+/// One voice's text of a live message from `from` on. The voice's whole text is its non-blank
+/// blocks joined with `"\n"`, as the fold joins them.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct LivePart {
+    /// `agent` or `thought`.
+    pub voice: Voice,
+    /// Where `text` starts in the voice's whole text, in Unicode scalar values. What was held
+    /// from there on is replaced.
+    pub from: u32,
+    pub text: String,
+}
+
+/// How a live message ended.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct LiveEnd {
+    /// The id of the harness's record of the message, as `entries` and the fold name it;
+    /// absent: not recorded yet.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub entry: Option<String>,
+    pub stop: LiveStop,
+}
+
+/// Why a live message ended.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum LiveStop {
+    /// The model finished.
+    Stop,
+    /// The model reached its output limit.
+    Length,
+    /// The model calls a tool next.
+    ToolUse,
+    /// The person or the harness stopped it.
+    Aborted,
+    /// The model's provider failed.
+    Error,
 }
 
 /// Who is at a plugin's harness.
@@ -131,11 +206,14 @@ impl DoorMode {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(tag = "t", rename_all = "snake_case", deny_unknown_fields)]
 pub enum RuntimeFrame {
-    /// The hello was taken. `entries`: this runtime takes the harness's records.
+    /// The hello was taken. `entries`: this runtime takes the harness's records. `live`: it
+    /// takes `live` frames.
     Welcome {
         door: u32,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         entries: Option<DoorEntries>,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        live: bool,
     },
     /// The answer to a moment or a settle.
     Answer { id: String, ok: Spoken },

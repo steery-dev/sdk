@@ -117,8 +117,8 @@ pub enum PluginFrame {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Live {
-    /// The harness's own identity of the message while it has no record: stable from its
-    /// first frame to its last.
+    /// The harness's key of the message, stable from its first frame to its last: the
+    /// reply's identity, as `words.message` names it in the record.
     pub message: String,
     /// The newest piece, milliseconds since 1970 on the harness's clock.
     pub at: u64,
@@ -130,8 +130,7 @@ pub struct Live {
     /// The tool a call being formed names, before its input is sent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub forming: Option<String>,
-    /// The message ended. Sent once without `entry` when it ends, and again with it once the
-    /// harness has recorded it.
+    /// The message ended: every part of it came before this frame or in it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub end: Option<LiveEnd>,
 }
@@ -155,10 +154,6 @@ pub struct LivePart {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct LiveEnd {
-    /// The id of the harness's record of the message, as `entries` and the fold name it;
-    /// absent: not recorded yet.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub entry: Option<String>,
     pub stop: LiveStop,
 }
 

@@ -494,9 +494,10 @@ An **Event** is one of:
   `thought` its reasoning or progress where the harness writes it as text, `tool` the
   text of a call's result, given after that call's `call_ended` (`call` names it; a
   call's input is `call_began.call.input` and is never repeated as words), `summary` a
-  harness's summary of earlier history. `message` is the record the words are of where one
-  record says several (an agent's message and its thinking), absent where it is `id`. A
-  `model` event without `thinking` says nothing about thinking (omp records none).
+  harness's summary of earlier history. `message` is the harness's key of the message the
+  words are of, where it is not `id`: the reply's identity, as a live frame's `message`
+  names it (§4.4). A `model` event without `thinking` says nothing about thinking (omp
+  records none).
 - A **Clip** is something a person's words carried, tagged by `kind`: `bytes {data,
   media_type?, name?}`, `file {path, media_type?, name?}` (bytes kept in a file here),
   `path {path, name?}` (a file the person named), `link {url}`.
@@ -841,7 +842,7 @@ takes words and picks where its mode is `tui` or `rpc` or a turn runs.
 | `answer` | `id, ok`, the op's answer below, or `id, refused, error?`: to an ask | |
 | `entries` | `after?, records: [Record]`: the harness's records (§4.1), in the order it appended them; `after` the id of the record before the first one here, absent where they start at the conversation's first | nothing |
 | `lost` | `why`: the copy cannot continue from `welcome.entries.after`; this connection carries no entries | nothing |
-| `live` | `message, at, first_at, parts: [{voice: agent \| thought, from, text}], forming?, end?: {entry?, stop: stop \| length \| tool_use \| aborted \| error}`: the agent's message as it is being written | nothing |
+| `live` | `message, at, first_at, parts: [{voice: agent \| thought, from, text}], forming?, end?: {stop: stop \| length \| tool_use \| aborted \| error}`: the agent's message as it is being written | nothing |
 
 A plugin keeps the moments it has not had answered, at most 256, and sends them again on
 its next connection; the runtime reads a moment `id` once. It waits for a moment's answer
@@ -860,16 +861,16 @@ connection's entries at the first that is not.
 
 **Live.** Only a copy welcomed with `live` sends them, for each assistant message as the
 harness writes it, at most one frame per message every 16 ms (`door::LIVE_EVERY_MS`).
-`message` is the harness's identity of the message, stable from its first frame to its
-last; `at` is its newest piece and `first_at` its first. A voice's whole text is its
-non-blank blocks joined with `"\n"`, as `words` join them; a part replaces that text from
-`from` (in Unicode scalar values) on with `text`, so a part applied twice changes nothing,
-and a part whose `from` is past the text held is a gap the end mends. `forming` names the
-tool of a call being formed before its input is sent. `end` comes once the message ended,
-without `entry`, and again in a frame with no parts and `entry` the id of its record (as
-`entries` and `words.message` name it) once the harness has recorded it. A frame is at most
-64 KiB (`door::LIVE_FRAME_MAX`): a longer one carries its parts cut to fit, and the next
-goes on from there. Live frames are a preview: the record is what `entries` carry.
+`message` is the harness's key of the message, stable from its first frame to its last:
+the reply's identity, which `words.message` names in the record (§4.1). `at` is its
+newest piece and `first_at` its first. A voice's whole text is its non-blank blocks joined
+with `"\n"`, as `words` join them. The parts of one message are sent and applied in order;
+a part replaces the voice's text from `from` (in Unicode scalar values) on with `text`. A
+part whose `from` is past the text held is a gap that only the stored reply mends.
+`forming` names the tool of a call being formed before its input is sent. `end` comes once
+the message ended, with or after its last part. A frame is at most 64 KiB
+(`door::LIVE_FRAME_MAX`): a longer one carries its parts cut to fit, and the next goes on
+from there. Live frames are a preview: the record is what `entries` carry.
 
 **Runtime to plugin.** `{t: "ask", id, op, …}`, answered by an `answer` frame with the
 same `id`: `ok` is the answer below, `refused` one of the refusals and `error` the

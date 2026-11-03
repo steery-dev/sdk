@@ -529,8 +529,8 @@ pub enum Event {
         id: String,
         voice: Voice,
         text: String,
-        /// The record these words are of, where one record says several (an agent's message
-        /// and its thinking); absent: `id`.
+        /// The harness's key of the message these words are of, where it is not `id`: the
+        /// reply's identity, as a live door frame's `message` names it.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         message: Option<String>,
         /// The call a `tool` voice's text belongs to.

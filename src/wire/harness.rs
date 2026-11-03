@@ -529,6 +529,10 @@ pub enum Event {
         id: String,
         voice: Voice,
         text: String,
+        /// The harness's key of the message these words are of, where it is not `id`: the
+        /// reply's identity, as a live door frame's `message` names it.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        message: Option<String>,
         /// The call a `tool` voice's text belongs to.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         call: Option<String>,

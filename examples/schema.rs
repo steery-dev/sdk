@@ -156,6 +156,7 @@ fn main() {
         door::Spoken,
         door::Ask,
         door::DoorSayMode,
+        door::DoorSaid,
         door::DoorStopped,
         door::DoorCompacted,
         process::Start,

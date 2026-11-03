@@ -85,7 +85,7 @@
       "oneOf": [
         {
           "additionalProperties": false,
-          "description": "Words into the conversation; answered `{}` once the harness took them.",
+          "description": "Words into the conversation; answered with [`DoorSaid`] once the harness holds them,\nand, asked again under the same `id` while it holds them, once it took them.",
           "properties": {
             "id": {
               "type": "string"
@@ -160,6 +160,28 @@
           "required": [
             "op",
             "id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Force the words of `say`, held by the harness and not yet taken, in now: the turn\nrunning is aborted, its conversation not parked, and the harness takes them as its\nnext input; words it let go with the abort are handed again, once. Answered with\n[`DoorStopped`].",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "op": {
+              "const": "force",
+              "type": "string"
+            },
+            "say": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "op",
+            "id",
+            "say"
           ],
           "type": "object"
         },
@@ -737,6 +759,23 @@
           "type": "string"
         }
       ]
+    },
+    "DoorSaid": {
+      "additionalProperties": false,
+      "description": "What a door's say did: when the harness held the words, and when it took them into\nits turn, each milliseconds since 1970 on the harness's clock. `queued_at` without\n`taken_at`: held, not yet taken. Neither: taken, not dated.",
+      "properties": {
+        "queued_at": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "taken_at": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
     },
     "DoorSayMode": {
       "description": "When door words go in.",
@@ -6608,6 +6647,9 @@
     },
     {
       "$ref": "#/$defs/DoorMode"
+    },
+    {
+      "$ref": "#/$defs/DoorSaid"
     },
     {
       "$ref": "#/$defs/DoorSayMode"

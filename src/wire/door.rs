@@ -168,7 +168,8 @@ pub struct Spoken {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Ask {
-    /// Words into the conversation; answered `{}` once the harness took them.
+    /// Words into the conversation; answered with [`DoorSaid`] once the harness holds them,
+    /// and, asked again under the same `id` while it holds them, once it took them.
     Say {
         id: String,
         words: String,
@@ -194,6 +195,11 @@ pub enum Ask {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         say: Option<String>,
     },
+    /// Force the words of `say`, held by the harness and not yet taken, in now: the turn
+    /// running is aborted, its conversation not parked, and the harness takes them as its
+    /// next input; words it let go with the abort are handed again, once. Answered with
+    /// [`DoorStopped`].
+    Force { id: String, say: String },
     /// Where the conversation stands, in its own model's words; answered with
     /// [`super::harness::Text`].
     Recap { id: String },
@@ -210,6 +216,19 @@ pub enum DoorSayMode {
     Steer,
     /// After it.
     Queue,
+}
+
+/// What a door's say did: when the harness held the words, and when it took them into
+/// its turn, each milliseconds since 1970 on the harness's clock. `queued_at` without
+/// `taken_at`: held, not yet taken. Neither: taken, not dated.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct DoorSaid {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub queued_at: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub taken_at: Option<u64>,
 }
 
 /// What a door's stop did.
@@ -241,4 +260,6 @@ pub mod refusal {
     pub const ENDING: &str = "ending";
     /// The turn running is not one the given `say` began.
     pub const OTHER_TURN: &str = "other-turn";
+    /// A say asked again: the harness let its words go unseen, and nothing of them is in.
+    pub const NOT_TAKEN: &str = "not-taken";
 }

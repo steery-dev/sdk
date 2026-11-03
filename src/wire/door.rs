@@ -260,4 +260,6 @@ pub mod refusal {
     pub const ENDING: &str = "ending";
     /// The turn running is not one the given `say` began.
     pub const OTHER_TURN: &str = "other-turn";
+    /// A say asked again: the harness let its words go unseen, and nothing of them is in.
+    pub const NOT_TAKEN: &str = "not-taken";
 }

@@ -863,7 +863,7 @@ forgotten.
 
 | `op` | Fields | `ok` answer | Refusals |
 |---|---|---|---|
-| `say` | `words, mode: steer \| queue, idle, throw?` | `{queued_at?, taken_at?}` once the harness holds the words; asked again while it holds them, once it took them | `harness-busy` (`idle` and the conversation is not idle: nothing handed over), `model-missing`, `no-answer` (handed over, not seen held within 8 s), `ending`, `refused` (asked again: the harness let the words go unseen; nothing is in) |
+| `say` | `words, mode: steer \| queue, idle, throw?` | `{queued_at, taken_at?}` once the harness holds words steered into a running turn; `{queued_at, taken_at}` once it takes words that start a turn; asked again while it holds them, once it took them | `harness-busy` (`idle` and the conversation is not idle: nothing handed over), `model-missing`, `no-answer` (handed over, not seen held within 8 s), `ending`, `not-taken` (asked again: the harness let the words go unseen; nothing is in), `refused` |
 | `pick` | `model?, thinking?` | `{model?, thinking?}` read back | `selection-unsupported`, `model-missing`, `ending`, `no-answer`, `refused` |
 | `stop` | `say?` | `{stopped, running: [string]}`: whether a turn was stopped; background jobs still running | `other-turn` (`say` given and the turn running is not one that `say` began), `selection-unsupported`, `no-answer` (a turn still runs after 2.5 s), `ending`, `refused` |
 | `force` | `say` | `{stopped, running: [string]}`, as `stop` | `refused` (no words of `say` wait here), `selection-unsupported`, `no-answer` (a turn still runs after 2.5 s), `ending` |
@@ -873,14 +873,15 @@ forgotten.
 - A say's `id` is the id `LiveState.turn.says` and `settled[].says` name. `throw`: one
   throw's words go in once, however often a say carrying it is asked.
 - A say's answer dates the words on the harness's clock, milliseconds since 1970:
-  `queued_at` when the harness held them (queued into a running turn, or a turn starting
-  with them), `taken_at` when it took them into its turn (the turn's input held them, or
-  their message was written). `queued_at` without `taken_at`: held, not yet taken; the
-  same say asked again is answered once they are taken, however long a call runs, or
-  `refused` once the harness let them go unseen (its turn ended and its queue emptied
-  without them). An answer with neither stamp: taken, not dated. The runtime asks a say
-  again with empty `words` to learn what became of it: an id the copy no longer remembers
-  is refused (no words), nothing handed.
+  `queued_at` when the harness held them (queued into a running turn, or handed to start
+  one), `taken_at` when it took them into its turn (the turn's input held them, or their
+  message was written). Words that start a turn are answered once it takes them, with both.
+  `queued_at` without `taken_at`: held, not yet taken; the same say asked again is answered
+  once they are taken, however long a call runs, `not-taken` once the harness let them go
+  unseen (its turn ended and its queue emptied without them), or `model-missing` where it
+  threw before it took them. An answer with neither stamp: taken, not dated. The runtime
+  asks a say again with empty `words` to learn what became of it: an id the copy no longer
+  remembers is refused (no words), nothing handed, which says nothing of the words.
 - `force` names a say whose words the harness holds and has not taken: the turn running is
   aborted, the conversation not parked, and the harness takes them as its next input;
   where it let them go with the abort, the copy hands them again, once. Words already

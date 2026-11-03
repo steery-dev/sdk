@@ -1016,6 +1016,10 @@
               "description": "Stable for that message.",
               "type": "string"
             },
+            "message": {
+              "description": "The record these words are of, where one record says several (an agent's message\nand its thinking); absent: `id`.",
+              "type": "string"
+            },
             "text": {
               "type": "string"
             },
@@ -3125,6 +3129,53 @@
       ],
       "type": "object"
     },
+    "Live": {
+      "additionalProperties": false,
+      "description": "One assistant message being written, as the harness has it so far.",
+      "properties": {
+        "at": {
+          "description": "The newest piece, milliseconds since 1970 on the harness's clock.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "end": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/LiveEnd"
+            }
+          ],
+          "description": "The message ended. Sent once without `entry` when it ends, and again with it once the\nharness has recorded it."
+        },
+        "first_at": {
+          "description": "The first piece of this message, on the same clock.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "forming": {
+          "description": "The tool a call being formed names, before its input is sent.",
+          "type": "string"
+        },
+        "message": {
+          "description": "The harness's own identity of the message while it has no record: stable from its\nfirst frame to its last.",
+          "type": "string"
+        },
+        "parts": {
+          "description": "What changed, per voice.",
+          "items": {
+            "$ref": "#/$defs/LivePart"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "message",
+        "at",
+        "first_at"
+      ],
+      "type": "object"
+    },
     "LiveCall": {
       "additionalProperties": false,
       "description": "A tool call running.",
@@ -3203,6 +3254,23 @@
         }
       ]
     },
+    "LiveEnd": {
+      "additionalProperties": false,
+      "description": "How a live message ended.",
+      "properties": {
+        "entry": {
+          "description": "The id of the harness's record of the message, as `entries` and the fold name it;\nabsent: not recorded yet.",
+          "type": "string"
+        },
+        "stop": {
+          "$ref": "#/$defs/LiveStop"
+        }
+      },
+      "required": [
+        "stop"
+      ],
+      "type": "object"
+    },
     "LiveEnded": {
       "additionalProperties": false,
       "description": "A call that ended, at its true end.",
@@ -3250,6 +3318,31 @@
       "required": [
         "label",
         "since"
+      ],
+      "type": "object"
+    },
+    "LivePart": {
+      "additionalProperties": false,
+      "description": "One voice's text of a live message from `from` on. The voice's whole text is its non-blank\nblocks joined with `\"\\n\"`, as the fold joins them.",
+      "properties": {
+        "from": {
+          "description": "Where `text` starts in the voice's whole text, in Unicode scalar values. What was held\nfrom there on is replaced.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "text": {
+          "type": "string"
+        },
+        "voice": {
+          "$ref": "#/$defs/Voice",
+          "description": "`agent` or `thought`."
+        }
+      },
+      "required": [
+        "voice",
+        "from",
+        "text"
       ],
       "type": "object"
     },
@@ -3411,6 +3504,36 @@
         }
       },
       "type": "object"
+    },
+    "LiveStop": {
+      "description": "Why a live message ended.",
+      "oneOf": [
+        {
+          "const": "stop",
+          "description": "The model finished.",
+          "type": "string"
+        },
+        {
+          "const": "length",
+          "description": "The model reached its output limit.",
+          "type": "string"
+        },
+        {
+          "const": "tool_use",
+          "description": "The model calls a tool next.",
+          "type": "string"
+        },
+        {
+          "const": "aborted",
+          "description": "The person or the harness stopped it.",
+          "type": "string"
+        },
+        {
+          "const": "error",
+          "description": "The model's provider failed.",
+          "type": "string"
+        }
+      ]
     },
     "LiveTurn": {
       "additionalProperties": false,
@@ -4433,6 +4556,58 @@
             "why"
           ],
           "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "The agent's message as it is being written; sent only on a connection welcomed with\n`live`.",
+          "properties": {
+            "at": {
+              "description": "The newest piece, milliseconds since 1970 on the harness's clock.",
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "end": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/LiveEnd"
+                }
+              ],
+              "description": "The message ended. Sent once without `entry` when it ends, and again with it once the\nharness has recorded it."
+            },
+            "first_at": {
+              "description": "The first piece of this message, on the same clock.",
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "forming": {
+              "description": "The tool a call being formed names, before its input is sent.",
+              "type": "string"
+            },
+            "message": {
+              "description": "The harness's own identity of the message while it has no record: stable from its\nfirst frame to its last.",
+              "type": "string"
+            },
+            "parts": {
+              "description": "What changed, per voice.",
+              "items": {
+                "$ref": "#/$defs/LivePart"
+              },
+              "type": "array"
+            },
+            "t": {
+              "const": "live",
+              "type": "string"
+            }
+          },
+          "required": [
+            "t",
+            "message",
+            "at",
+            "first_at"
+          ],
+          "type": "object"
         }
       ]
     },
@@ -5161,7 +5336,7 @@
       "oneOf": [
         {
           "additionalProperties": false,
-          "description": "The hello was taken. `entries`: this runtime takes the harness's records.",
+          "description": "The hello was taken. `entries`: this runtime takes the harness's records. `live`: it\ntakes `live` frames.",
           "properties": {
             "door": {
               "format": "uint32",
@@ -5174,6 +5349,9 @@
                   "$ref": "#/$defs/DoorEntries"
                 }
               ]
+            },
+            "live": {
+              "type": "boolean"
             },
             "t": {
               "const": "welcome",
@@ -5212,7 +5390,7 @@
           "description": "Something the runtime asks of the copy.",
           "oneOf": [
             {
-              "description": "Words into the conversation; answered `{}` once the harness took them.",
+              "description": "Words into the conversation; answered with [`DoorSaid`] once the harness holds them,\nand, asked again under the same `id` while it holds them, once it took them.",
               "properties": {
                 "id": {
                   "type": "string"
@@ -5285,6 +5463,27 @@
               "required": [
                 "op",
                 "id"
+              ],
+              "type": "object"
+            },
+            {
+              "description": "Force the words of `say`, held by the harness and not yet taken, in now: the turn\nrunning is aborted, its conversation not parked, and the harness takes them as its\nnext input; words it let go with the abort are handed again, once. Answered with\n[`DoorStopped`].",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "op": {
+                  "const": "force",
+                  "type": "string"
+                },
+                "say": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "op",
+                "id",
+                "say"
               ],
               "type": "object"
             },
@@ -6868,6 +7067,9 @@
       "$ref": "#/$defs/Listening"
     },
     {
+      "$ref": "#/$defs/Live"
+    },
+    {
       "$ref": "#/$defs/LiveCall"
     },
     {
@@ -6877,10 +7079,16 @@
       "$ref": "#/$defs/LiveDoor"
     },
     {
+      "$ref": "#/$defs/LiveEnd"
+    },
+    {
       "$ref": "#/$defs/LiveEnded"
     },
     {
       "$ref": "#/$defs/LiveJob"
+    },
+    {
+      "$ref": "#/$defs/LivePart"
     },
     {
       "$ref": "#/$defs/LiveRetry"
@@ -6890,6 +7098,9 @@
     },
     {
       "$ref": "#/$defs/LiveState"
+    },
+    {
+      "$ref": "#/$defs/LiveStop"
     },
     {
       "$ref": "#/$defs/LiveTurn"

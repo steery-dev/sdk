@@ -1,9 +1,9 @@
-# The program protocol, version 6
+# The program protocol, version 7
 
 The one contract between Steery's runtime (`steery`) and every **driver** and **adapter**,
 and between the runtime's control and a remote host (§6). It is published under MIT in
 [steery-dev/sdk](https://github.com/steery-dev/sdk) with `steery-sdk`, the Rust crate that
-implements it, and the JSON Schema [`schema/protocol-v6.json`](schema/protocol-v6.json),
+implements it, and the JSON Schema [`schema/protocol-v7.json`](schema/protocol-v7.json),
 which holds every shape below. Steery's own drivers
 ([steery-dev/drivers](https://github.com/steery-dev/drivers)) and adapters
 ([steery-dev/adapters](https://github.com/steery-dev/adapters)) are programs like any
@@ -597,7 +597,7 @@ named for it (Claude Code's `CLAUDE_ENV_FILE`).
 | `models` | `{}` | `{models: [Model], unlisted?: {thinking}, watch: [path], signed_in?: bool}` | `no-binary`, `refused` |
 | `start` | `{act, external_id?, cwd, folder, worktree, model?, thinking?, reads}` | `{argv, env, cwd, stdin: "words" \| "none" \| "held", inbox}` | `not-found`, `no-place`, `model-missing`, `selection-unsupported`, `no-binary`, `start-failed` |
 | `turn/read` | `{turn, stream: "stdout" \| "stderr", line, delivery?}` | `{named?, took?, ended?: {state, error?}, refused?, events: [Event], title?}` | none |
-| `stop` | `{external_id, holder}` | `{stopped, proof?}` | `not-stopped` |
+| `stop` | `{external_id, holder, say?}` | `{stopped, proof?}` | `not-stopped`, `other-turn` |
 | `receipt/mark` | `{external_id}` | `{mark}` | `selection-unsupported` |
 | `receipt/find` | `{external_id, mark, delivery}` | `{found, owner?}` | `refused` |
 | `reader` | `{system?, model?, thinking?, tools: "none" \| "read", cwd, asked}` | `{argv, env, cwd, stdin: "words" \| "none", files: [{path, content}], read: "whole" \| "events"}` | `no-binary`, `model-missing`, `selection-unsupported` |
@@ -709,6 +709,13 @@ says this step ended the turn; a harness with no graceful stop of its own answer
 evidence (the turn it ended and the state it reached), which the runtime records with
 the stop.
 
+`say` (version 7) is the `id` of a `say` the runtime gave the driver (§4.3): stop only
+the turn those words began, a cancel of Steery's own words and never of the person's.
+The driver ends it in the harness's own way and answers `stopped` true once it ended;
+`{stopped: false}` where no turn runs. `other-turn` where the turn running is not one
+that say began, or the driver cannot tell: nothing is stopped. With `say` the runtime
+sends no signal after it, whatever it answers: this step is the whole stop.
+
 **`receipt/mark`** and **`receipt/find`** prove that words went in where the door could
 not say so (`say` answered `took: false`, or a plugin door answered `no-answer`: its timer
 ran out while the harness still held the words queued). `mark` is an opaque point in the
@@ -747,7 +754,7 @@ A driver reaches a live conversation in one of two ways, and says which in
 
 | Method | Params | Result | Refusals |
 |---|---|---|---|
-| `say` | `{external_id, words, mode: "steer" \| "queue" \| "immediate"}` | `{took}` | `no-door`, `no-answer`, `harness-busy`, `refused` |
+| `say` | `{external_id, words, mode: "steer" \| "queue" \| "immediate", id?}` | `{took}` | `no-door`, `no-answer`, `harness-busy`, `refused` |
 | `pick` | `{external_id, model?, thinking?}` | `{model?, thinking?}` as read back | `model-missing`, `selection-unsupported` |
 | `recap` | `{external_id, asked}` | `{text}`, written by the conversation's own model | `no-answer`, `model-missing` |
 
@@ -756,13 +763,19 @@ A driver reaches a live conversation in one of two ways, and says which in
 taking the words, false where they were handed over unconfirmed (the runtime then looks
 with `receipt/find`).
 
+`id` (version 7, where the runtime always gives it) names the say: the name of the
+delivery its words carry (§3.3), or one of the runtime's own for words of no delivery,
+as a plugin door's say is named (§4.4). The driver names it in `turn.says` of the turn
+that took the words, and in `settled[].says` once that turn ends; a `stop` naming it
+stops only that turn (§4.2). A turn that took words of two says names both.
+
 A driver whose door is `picks` or `keeps` sends, unasked, `session/changed {external_id,
 state}`, where `state` is a **LiveState**, the same shape the plugin door's `state` frame
 carries:
 
 | Field | What it says |
 |---|---|
-| `turn?` | `{began_at, says: [string]}`: a turn runs, begun then; `says` the ids of `say`s it took as Steery's. |
+| `turn?` | `{began_at, says: [string]}`: a turn runs, begun then; `says` the ids of `say`s it took as Steery's: a driver's, the `id` each `say` gave (version 7). |
 | `idle?` | The door checked the conversation idle. Absent: it cannot say. |
 | `pending?` | Words wait to go in. |
 | `typing?` | The person's editor holds text. Absent: it cannot say. |
@@ -773,7 +786,7 @@ carries:
 | `calls` | `[{id, tool, since, children: [{id, tool}], jobs?: [{label, since, output?, output_at?}]}]`: the top-level calls running, oldest first, with calls running inside each; each `tool` named as a Call names it (§4.1), Steery's own as `mcp__steery__<tool>`. `jobs`: the background jobs a call waits on that still run, oldest first, at most 8, each with what the harness calls it (often its command, at most 120 characters), when it began, its newest line of output or its stage (at most 200 characters) and when that line last changed. Absent: none. |
 | `ended` | `[{id, at}]`: top-level calls that ended lately, oldest first, at most 64. Their times are the calls' true ends, over a transcript's. |
 | `dialog?` | `{kind: select \| confirm \| input \| editor \| custom, title, since}`: the harness's own dialog open in front of the person. |
-| `settled` | `[{began_at, at, says, failed, error?}]`: turns Steery's words began that ended, at most 16. |
+| `settled` | `[{began_at, at, says, failed, error?}]`: turns Steery's words began that ended, at most 16; `says` as `turn.says` named them. |
 
 A conversation is idle where `idle` is true, no turn runs, nothing is pending, `typing`
 is false, and it is neither compacting nor retrying.
@@ -1287,9 +1300,10 @@ The command exits 0 once added, 1 refused or declined, 2 with the consent still 
 A program refuses only with these words, defined once in `steery_sdk::refusal`:
 `harness-busy`, `not-found`, `no-place`, `no-door`, `no-answer`, `selection-unsupported`,
 `model-missing`, `held`, `offline`, `untrusted`, `no-binary`, `start-failed`, `no-session`,
-`not-stopped`, `refused`. The server owns each word's class and bound; an unknown word
-reaches the person. The plugin door adds two words of its own (§4.4), defined in
-`steery_sdk::wire::door::refusal`: `ending` and `other-turn`.
+`not-stopped`, `other-turn`, `refused`. The server owns each word's class and bound; an
+unknown word reaches the person. The plugin door (§4.4) speaks `other-turn` too, and adds
+two words of its own, defined in `steery_sdk::wire::door::refusal`: `ending` and
+`not-taken`.
 
 ## 9. Bounds
 
@@ -1316,13 +1330,16 @@ the `records` of one `sessions/fold`, so each stays within its 16 MiB frame or l
 
 ## 10. Versions
 
-This is version 6. Its shapes are strict (§2): a program or runtime rejects a field it
+This is version 7. Its shapes are strict (§2): a program or runtime rejects a field it
 does not know, so any change to a shape, a method, a word or a meaning is a new protocol
 number, never an extension of this one. The runtime offers every number it speaks and the
 program picks one; `steery-sdk`'s major version is the protocol it speaks, and it speaks
-every version still offered (`steery_sdk::PROTOCOLS`). Version 6 is version 5 with one
-field, `call_ended`'s `waited` (§4.1); nothing else changed, so a driver that picked 5 or
-older says no `waited`. Version 5 is version 4 with needs:
+every version still offered (`steery_sdk::PROTOCOLS`). Version 7 is version 6 with say
+ids: `say`'s `id`, which `turn.says` and `settled[].says` name, and `stop`'s `say`, with
+its refusal `other-turn` (§4.2, §4.3); nothing else changed, so the runtime gives a driver
+that picked 6 or older no `id` and no `say`, and that driver's `says` name no say. Version
+6 is version 5 with one field, `call_ended`'s `waited` (§4.1); nothing else changed, so a
+driver that picked 5 or older says no `waited`. Version 5 is version 4 with needs:
 `setup/plan`'s `needs` and one method, `needs/give` (§4.1); nothing else changed, so a
 driver that picked 4 answers no `needs`. Version 4 is version 3 with one
 method, `mcp/list` (§4.1); nothing else changed. Version 3 was version 2 with one rename:

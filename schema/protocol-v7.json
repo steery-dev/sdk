@@ -3542,7 +3542,7 @@
         },
         "says": {
           "default": [],
-          "description": "The ids of `say`s it took as Steery's.",
+          "description": "The ids of `say`s it took as Steery's: a driver's, the `id` each `say` gave.",
           "items": {
             "type": "string"
           },
@@ -5633,6 +5633,10 @@
           "description": "The conversation.",
           "type": "string"
         },
+        "id": {
+          "description": "The say's name (version 7): the delivery its words carry, else one of the runtime's\nown. The driver names it in `turn.says` of the turn that took the words.",
+          "type": "string"
+        },
         "mode": {
           "$ref": "#/$defs/SayMode",
           "description": "When they go in."
@@ -6314,6 +6318,10 @@
         "holder": {
           "$ref": "#/$defs/Holder",
           "description": "Who holds it, as `held` said."
+        },
+        "say": {
+          "description": "The `id` of a `say` (version 7): stop only the turn its words began, and refuse\n`other-turn` where the turn running is another. Absent: the person's stop.",
+          "type": "string"
         }
       },
       "required": [
@@ -6771,7 +6779,7 @@
       "type": "object"
     }
   },
-  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v6.json",
+  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v7.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "anyOf": [
     {
@@ -7420,6 +7428,6 @@
       "$ref": "#/$defs/Way"
     }
   ],
-  "description": "Every shape of the Steery program protocol, version 6 (PROTOCOL.md), and the release manifest programs are published by.",
+  "description": "Every shape of the Steery program protocol, version 7 (PROTOCOL.md), and the release manifest programs are published by.",
   "title": "Protocol"
 }

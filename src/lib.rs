@@ -23,9 +23,14 @@ use tokio::io::{AsyncWriteExt, BufReader};
 use tokio::sync::mpsc;
 
 /// Every protocol version this crate speaks, oldest first: 4 is 3 with `mcp/list`, 5 is 4
-/// with needs (`setup/plan`'s `needs`, `needs/give`), 6 is 5 with `call_ended`'s `waited`
-/// (PROTOCOL.md §10). A program answers the newest of these the runtime offers.
-pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6];
+/// with needs (`setup/plan`'s `needs`, `needs/give`), 6 is 5 with `call_ended`'s `waited`,
+/// 7 is 6 with say ids (`say`'s `id`, `stop`'s `say`) (PROTOCOL.md §10). A program answers
+/// the newest of these the runtime offers.
+pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7];
+
+/// The first version whose `say` carries an `id` and whose `stop` may name one
+/// (PROTOCOL.md §4.2, §4.3): the runtime gives neither to a program that picked an older one.
+pub const SAY_IDS: u32 = 7;
 
 /// The version a program answers `initialize` with: the newest of [`PROTOCOLS`] in
 /// `offered`, or none where the runtime offers none of them.
@@ -68,6 +73,9 @@ pub mod refusal {
     pub const NO_SESSION: &str = "no-session";
     /// A stop that could not end what ran: something still runs.
     pub const NOT_STOPPED: &str = "not-stopped";
+    /// A stop naming a say found a turn running that the say did not begin, or could not
+    /// tell: nothing was stopped.
+    pub const OTHER_TURN: &str = "other-turn";
     /// Anything else.
     pub const REFUSED: &str = "refused";
 
@@ -87,6 +95,7 @@ pub mod refusal {
         START_FAILED,
         NO_SESSION,
         NOT_STOPPED,
+        OTHER_TURN,
         REFUSED,
     ];
 }

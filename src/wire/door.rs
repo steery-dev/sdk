@@ -327,12 +327,11 @@ pub struct DoorCompacted {
     pub forgot: u64,
 }
 
-/// Refusal words of the door's own.
+/// Refusal words of the door's own. It speaks [`crate::refusal::OTHER_TURN`] too: the
+/// turn running is not one the given `say` began.
 pub mod refusal {
     /// The copy is letting the conversation go and took nothing.
     pub const ENDING: &str = "ending";
-    /// The turn running is not one the given `say` began.
-    pub const OTHER_TURN: &str = "other-turn";
     /// A say asked again: the harness let its words go unseen, and nothing of them is in.
     pub const NOT_TAKEN: &str = "not-taken";
 }

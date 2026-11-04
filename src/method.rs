@@ -111,7 +111,7 @@ requests! {
     /// One line of a turn's output (§4.2).
     TurnRead, TURN_READ = "turn/read": harness::TurnRead => harness::TurnLine, seconds(10), [];
     /// The harness's own graceful stop (§4.2).
-    Stop, STOP = "stop": harness::Stop => harness::Stopped, Duration::from_millis(2_800), [NOT_STOPPED];
+    Stop, STOP = "stop": harness::Stop => harness::Stopped, Duration::from_millis(2_800), [NOT_STOPPED, OTHER_TURN];
     /// A point in a conversation before words are sent (§4.2).
     ReceiptMark, RECEIPT_MARK = "receipt/mark": harness::ReceiptMark => harness::Marked, seconds(10),
         [SELECTION_UNSUPPORTED];

@@ -1505,6 +1505,10 @@ pub struct Stop {
     pub external_id: String,
     /// Who holds it, as `held` said.
     pub holder: Holder,
+    /// The `id` of a `say` (version 7): stop only the turn its words began, and refuse
+    /// `other-turn` where the turn running is another. Absent: the person's stop.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub say: Option<String>,
 }
 
 /// What `stop`'s graceful step did.
@@ -1696,6 +1700,10 @@ pub struct Say {
     pub words: String,
     /// When they go in.
     pub mode: SayMode,
+    /// The say's name (version 7): the delivery its words carry, else one of the runtime's
+    /// own. The driver names it in `turn.says` of the turn that took the words.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
 }
 
 /// When said words go in.
@@ -1846,7 +1854,7 @@ impl LiveState {
 #[serde(deny_unknown_fields)]
 pub struct LiveTurn {
     pub began_at: u64,
-    /// The ids of `say`s it took as Steery's.
+    /// The ids of `say`s it took as Steery's: a driver's, the `id` each `say` gave.
     #[serde(default)]
     pub says: Vec<String>,
 }

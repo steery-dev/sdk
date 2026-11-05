@@ -343,6 +343,24 @@
       ],
       "type": "object"
     },
+    "CallMeta": {
+      "additionalProperties": false,
+      "description": "Where in an MCP call's `_meta` its harness names whose call it is (§3.3).",
+      "properties": {
+        "conversation": {
+          "description": "The key whose value is the conversation's id; for a sub-agent's call, its lead's.",
+          "type": "string"
+        },
+        "sub_agent": {
+          "description": "The key whose value is the id of the sub-agent making the call, where that differs\nfrom the conversation's.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "conversation"
+      ],
+      "type": "object"
+    },
     "Channel": {
       "description": "How `hosts/channel` reaches a host.",
       "oneOf": [
@@ -2776,6 +2794,14 @@
       "additionalProperties": false,
       "description": "How the runtime recognizes a harness's processes (§3.3).",
       "properties": {
+        "call_meta": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/CallMeta"
+            }
+          ],
+          "description": "The keys of an MCP call's `_meta` the harness names the call's conversation in\n(version 8), where one MCP client serves every conversation it runs and no header\ncan say whose a call is."
+        },
         "executables": {
           "description": "The file names a harness process runs as.",
           "items": {
@@ -6779,7 +6805,7 @@
       "type": "object"
     }
   },
-  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v7.json",
+  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v8.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "anyOf": [
     {
@@ -6805,6 +6831,9 @@
     },
     {
       "$ref": "#/$defs/Call"
+    },
+    {
+      "$ref": "#/$defs/CallMeta"
     },
     {
       "$ref": "#/$defs/Channel"
@@ -7428,6 +7457,6 @@
       "$ref": "#/$defs/Way"
     }
   ],
-  "description": "Every shape of the Steery program protocol, version 7 (PROTOCOL.md), and the release manifest programs are published by.",
+  "description": "Every shape of the Steery program protocol, version 8 (PROTOCOL.md), and the release manifest programs are published by.",
   "title": "Protocol"
 }

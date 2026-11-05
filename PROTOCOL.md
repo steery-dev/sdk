@@ -1,9 +1,9 @@
-# The program protocol, version 7
+# The program protocol, version 8
 
 The one contract between Steery's runtime (`steery`) and every **driver** and **adapter**,
 and between the runtime's control and a remote host (§6). It is published under MIT in
 [steery-dev/sdk](https://github.com/steery-dev/sdk) with `steery-sdk`, the Rust crate that
-implements it, and the JSON Schema [`schema/protocol-v7.json`](schema/protocol-v7.json),
+implements it, and the JSON Schema [`schema/protocol-v8.json`](schema/protocol-v8.json),
 which holds every shape below. Steery's own drivers
 ([steery-dev/drivers](https://github.com/steery-dev/drivers)) and adapters
 ([steery-dev/adapters](https://github.com/steery-dev/adapters)) are programs like any
@@ -150,7 +150,7 @@ Every surface Steery draws a harness or a machine on — its apps, its web pages
 | `sign_in?` | What a person does to log the harness's own account in, as they read it on their phone and do at the machine, completing "{harness} is not logged in on {machine}: …": a command they run in a terminal there, ``run `claude auth login` in a terminal``, never a command only inside the harness's own window. |
 | `knowing` | How an agent in this harness learns its conversation's id; Steery's skill carries it. |
 | `transcript?` | One line on how the harness's transcript file reads, for a reader handed one. Absent: the harness keeps no transcript file, and a carry refuses. |
-| `identity` | How the runtime recognizes the harness's processes (§3.3): `{executables, package?, session_variable?}`. |
+| `identity` | How the runtime recognizes the harness's processes and MCP calls (§3.3): `{executables, package?, session_variable?, call_meta?: {conversation, sub_agent?}}` (`call_meta`: version 8). |
 | `setup` | `{reads_skills, cuts_tool_text, call_bound?}`. `reads_skills`: the harness reads Steery's skill from the entry `setup/plan` lists; where false, the runtime carries the whole skill in its MCP handshake. `cuts_tool_text`: the harness cuts an MCP tool's description before its model reads it, so the runtime also says its escalation policies whole at `session_start`. `call_bound`: the longest the harness waits for one MCP call, in seconds, where no entry can lengthen it; the runtime answers a wait within it. |
 | `reader?` | The one-shot reader (§4.2): `{sealed, known, unnamed}`. `sealed` says which of `tools`, `mcp`, `instructions`, `extensions`, `history` the reader shuts out (true) or still reaches (false); the runtime tells a person and tries the most sealed reader first. `known`: models the reader runs that `models` may not list. `unnamed`: the reader runs the harness's own model when given none. Absent: the driver has no reader. |
 | `facts` | What the holder rule and offers read, below. |
@@ -263,15 +263,24 @@ The runtime and every program read these the same way.
 - **MCP request headers** name the conversation an MCP call is made in:
   `Steery-Harness` (a driver id), `Steery-External-Id`, and, where a sub-agent makes the
   call, `Steery-Sub-Agent` (the sub-agent's id; the other two then name its lead). Values
-  are trimmed; both of the first two or neither.
+  are trimmed; both of the first two or neither, unless that driver declares
+  `identity.call_meta` (version 8).
+- **An MCP call's `_meta`** names it where one MCP client serves every conversation the
+  harness runs, so no header can say whose a call is, and the harness puts the
+  conversation in each call's `_meta` itself. The driver declares the keys in
+  `identity.call_meta`: `conversation`, whose value is the conversation's id (a sub-agent's
+  lead, for a sub-agent's call), and `sub_agent`, whose value is the calling sub-agent's id
+  where it is not that id. Its MCP entry then sends `Steery-Harness` alone, and a call
+  whose `_meta` holds no string at `conversation` names nobody.
 - **The delivery marker** `steery-delivery:<name>` is in every set of words Steery puts
   into a conversation. It matches only whole: the character after `<name>` is not a
   letter, a digit, `.`, `-` or `_`.
-- **Which conversation a process or an MCP call is in**, first match wins: the headers;
-  then for the process and each of its parents up to 8, stopping at pid 1: the
-  `session_variable` in the environment of a process that runs as its harness; an
-  absolute path on its command line that is a listed conversation's transcript; the one
-  conversation whose transcripts it holds open (two or more name none).
+- **Which conversation a process or an MCP call is in**, first match wins: the headers,
+  or `Steery-Harness` with the call's `_meta`; then for the process and each of its
+  parents up to 8, stopping at pid 1: the `session_variable` in the environment of a
+  process that runs as its harness; an absolute path on its command line that is a listed
+  conversation's transcript; the one conversation whose transcripts it holds open (two or
+  more name none).
 
 ### 3.4 Settings
 
@@ -1330,13 +1339,16 @@ the `records` of one `sessions/fold`, so each stays within its 16 MiB frame or l
 
 ## 10. Versions
 
-This is version 7. Its shapes are strict (§2): a program or runtime rejects a field it
+This is version 8. Its shapes are strict (§2): a program or runtime rejects a field it
 does not know, so any change to a shape, a method, a word or a meaning is a new protocol
 number, never an extension of this one. The runtime offers every number it speaks and the
 program picks one; `steery-sdk`'s major version is the protocol it speaks, and it speaks
-every version still offered (`steery_sdk::PROTOCOLS`). Version 7 is version 6 with say
-ids: `say`'s `id`, which `turn.says` and `settled[].says` name, and `stop`'s `say`, with
-its refusal `other-turn` (§4.2, §4.3); nothing else changed, so the runtime gives a driver
+every version still offered (`steery_sdk::PROTOCOLS`). Version 8 is version 7 with one
+field, `identity.call_meta`, and `Steery-Harness` sent alone beside it (§3.3); nothing
+else changed, so a driver that picked 7 or older declares no `call_meta`. Version 7 is
+version 6 with say ids: `say`'s `id`, which `turn.says` and `settled[].says` name, and
+`stop`'s `say`, with its refusal `other-turn` (§4.2, §4.3); nothing else changed, so the
+runtime gives a driver
 that picked 6 or older no `id` and no `say`, and that driver's `says` name no say. Version
 6 is version 5 with one field, `call_ended`'s `waited` (§4.1); nothing else changed, so a
 driver that picked 5 or older says no `waited`. Version 5 is version 4 with needs:

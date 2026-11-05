@@ -24,9 +24,10 @@ use tokio::sync::mpsc;
 
 /// Every protocol version this crate speaks, oldest first: 4 is 3 with `mcp/list`, 5 is 4
 /// with needs (`setup/plan`'s `needs`, `needs/give`), 6 is 5 with `call_ended`'s `waited`,
-/// 7 is 6 with say ids (`say`'s `id`, `stop`'s `say`), 8 is 7 with `identity.call_meta`
-/// (PROTOCOL.md §10). A program answers the newest of these the runtime offers.
-pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7, 8];
+/// 7 is 6 with say ids (`say`'s `id`, `stop`'s `say`), 8 is 7 with `identity.call_meta`, 9
+/// is 8 with a harness's `lines` and `hosted` (PROTOCOL.md §10). A program answers the
+/// newest of these the runtime offers.
+pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7, 8, 9];
 
 /// The first version whose `say` carries an `id` and whose `stop` may name one
 /// (PROTOCOL.md §4.2, §4.3): the runtime gives neither to a program that picked an older one.
@@ -35,6 +36,10 @@ pub const SAY_IDS: u32 = 7;
 /// The first version whose `identity` may carry `call_meta` (PROTOCOL.md §3.3): a driver
 /// that picked an older one says none.
 pub const CALL_META: u32 = 8;
+
+/// The first version whose harness may say `lines` and `hosted` (PROTOCOL.md §3.1): a
+/// driver that picked an older one says neither.
+pub const LINES_HOSTED: u32 = 9;
 
 /// The version a program answers `initialize` with: the newest of [`PROTOCOLS`] in
 /// `offered`, or none where the runtime offers none of them.

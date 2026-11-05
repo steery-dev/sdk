@@ -2104,6 +2104,13 @@
           },
           "type": "array"
         },
+        "hosted": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "The operations of Steery's catalog the harness hosts as tools of its own, each by its\ntool's name: `{\"cards.put\": \"card\"}` (version 9). Steery's skill and hooks name each so,\nand every other as Steery spells it.",
+          "type": "object"
+        },
         "identity": {
           "$ref": "#/$defs/Identity",
           "description": "How the runtime recognizes the harness's processes."
@@ -2118,6 +2125,10 @@
             "$ref": "#/$defs/Level"
           },
           "type": "array"
+        },
+        "lines": {
+          "$ref": "#/$defs/Lines",
+          "description": "Who writes its sessions' lines (version 9). Absent: the agent, which Steery's skill\nand hooks tell how."
         },
         "minimum": {
           "allOf": [
@@ -3042,6 +3053,21 @@
         {
           "const": "live",
           "description": "It reaches a running conversation through its door (§4.3).",
+          "type": "string"
+        }
+      ]
+    },
+    "Lines": {
+      "description": "Who writes a session's lines, its record of what it is doing (§3.1).",
+      "oneOf": [
+        {
+          "const": "agent",
+          "description": "The agent, through Steery's tools.",
+          "type": "string"
+        },
+        {
+          "const": "harness",
+          "description": "The harness itself: its agent is told nothing about writing them.",
           "type": "string"
         }
       ]
@@ -6805,7 +6831,7 @@
       "type": "object"
     }
   },
-  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v8.json",
+  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v9.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "anyOf": [
     {
@@ -7083,6 +7109,9 @@
     },
     {
       "$ref": "#/$defs/Level"
+    },
+    {
+      "$ref": "#/$defs/Lines"
     },
     {
       "$ref": "#/$defs/List"
@@ -7457,6 +7486,6 @@
       "$ref": "#/$defs/Way"
     }
   ],
-  "description": "Every shape of the Steery program protocol, version 8 (PROTOCOL.md), and the release manifest programs are published by.",
+  "description": "Every shape of the Steery program protocol, version 9 (PROTOCOL.md), and the release manifest programs are published by.",
   "title": "Protocol"
 }

@@ -1,9 +1,9 @@
-# The program protocol, version 8
+# The program protocol, version 9
 
 The one contract between Steery's runtime (`steery`) and every **driver** and **adapter**,
 and between the runtime's control and a remote host (§6). It is published under MIT in
 [steery-dev/sdk](https://github.com/steery-dev/sdk) with `steery-sdk`, the Rust crate that
-implements it, and the JSON Schema [`schema/protocol-v8.json`](schema/protocol-v8.json),
+implements it, and the JSON Schema [`schema/protocol-v9.json`](schema/protocol-v9.json),
 which holds every shape below. Steery's own drivers
 ([steery-dev/drivers](https://github.com/steery-dev/drivers)) and adapters
 ([steery-dev/adapters](https://github.com/steery-dev/adapters)) are programs like any
@@ -149,6 +149,8 @@ Every surface Steery draws a harness or a machine on — its apps, its web pages
 | `minimum?` | `{release, update?}`: the oldest harness release the driver speaks to, and the command that updates it. The runtime compares it with `setup/plan`'s `found.release` and says the line itself. |
 | `sign_in?` | What a person does to log the harness's own account in, as they read it on their phone and do at the machine, completing "{harness} is not logged in on {machine}: …": a command they run in a terminal there, ``run `claude auth login` in a terminal``, never a command only inside the harness's own window. |
 | `knowing` | How an agent in this harness learns its conversation's id; Steery's skill carries it. |
+| `lines?` | Who writes its sessions' lines: `agent`, told how by Steery's skill and hooks, or `harness`, which writes them itself, so its agent is told nothing of writing them. Absent: `agent` (version 9). |
+| `hosted?` | The operations of Steery's catalog the harness hosts as tools of its own, each by its tool's name, `{"cards.put": "card", "sessions.describe": "describe"}`: Steery's skill and hooks name each so, and every other as Steery spells it. Absent: none (version 9). |
 | `transcript?` | One line on how the harness's transcript file reads, for a reader handed one. Absent: the harness keeps no transcript file, and a carry refuses. |
 | `identity` | How the runtime recognizes the harness's processes and MCP calls (§3.3): `{executables, package?, session_variable?, call_meta?: {session, sub_agent?}}` (`call_meta`: version 8). |
 | `setup` | `{reads_skills, cuts_tool_text, call_bound?}`. `reads_skills`: the harness reads Steery's skill from the entry `setup/plan` lists; where false, the runtime carries the whole skill in its MCP handshake. `cuts_tool_text`: the harness cuts an MCP tool's description before its model reads it, so the runtime also says its escalation policies whole at `session_start`. `call_bound`: the longest the harness waits for one MCP call, in seconds, where no entry can lengthen it; the runtime answers a wait within it. |
@@ -1339,11 +1341,14 @@ the `records` of one `sessions/fold`, so each stays within its 16 MiB frame or l
 
 ## 10. Versions
 
-This is version 8. Its shapes are strict (§2): a program or runtime rejects a field it
+This is version 9. Its shapes are strict (§2): a program or runtime rejects a field it
 does not know, so any change to a shape, a method, a word or a meaning is a new protocol
 number, never an extension of this one. The runtime offers every number it speaks and the
 program picks one; `steery-sdk`'s major version is the protocol it speaks, and it speaks
-every version still offered (`steery_sdk::PROTOCOLS`). Version 8 is version 7 with one
+every version still offered (`steery_sdk::PROTOCOLS`). Version 9 is version 8 with two
+fields of a harness, `lines` and `hosted` (§3.1); nothing else changed, so a driver that
+picked 8 or older says neither, and its agent writes its lines and is told Steery's own
+spellings. Version 8 is version 7 with one
 field, `identity.call_meta`, and `Steery-Harness` sent alone beside it (§3.3); nothing
 else changed, so a driver that picked 7 or older declares no `call_meta`. Version 7 is
 version 6 with say ids: `say`'s `id`, which `turn.says` and `settled[].says` name, and

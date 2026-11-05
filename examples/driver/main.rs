@@ -57,6 +57,8 @@ impl Program for Example {
                 sign_in: None,
                 knowing: "Its conversation's id is the name of its file in ~/.example/sessions."
                     .into(),
+                lines: wire::Lines::Agent,
+                hosted: Default::default(),
                 transcript: Some("One JSON object per line.".into()),
                 identity: wire::Identity {
                     executables: vec!["example".into()],

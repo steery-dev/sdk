@@ -465,6 +465,8 @@ mod tests {
                     minimum: None,
                     sign_in: None,
                     knowing: "It has no conversations.".into(),
+                    lines: wire::Lines::Agent,
+                    hosted: Default::default(),
                     transcript: None,
                     identity: wire::Identity {
                         executables: vec!["lister".into()],

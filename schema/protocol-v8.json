@@ -347,8 +347,8 @@
       "additionalProperties": false,
       "description": "Where in an MCP call's `_meta` its harness names whose call it is (§3.3).",
       "properties": {
-        "conversation": {
-          "description": "The key whose value is the conversation's id; for a sub-agent's call, its lead's.",
+        "session": {
+          "description": "The key whose value is the conversation's id, the session Steery files the call\nunder; for a sub-agent's call, its lead's.",
           "type": "string"
         },
         "sub_agent": {
@@ -357,7 +357,7 @@
         }
       },
       "required": [
-        "conversation"
+        "session"
       ],
       "type": "object"
     },

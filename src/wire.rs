@@ -353,6 +353,15 @@ pub struct HarnessInfo {
     pub sign_in: Option<String>,
     /// How an agent in this harness learns its conversation's id.
     pub knowing: String,
+    /// Who writes its sessions' lines (version 9). Absent: the agent, which Steery's skill
+    /// and hooks tell how.
+    #[serde(default, skip_serializing_if = "Lines::is_agent")]
+    pub lines: Lines,
+    /// The operations of Steery's catalog the harness hosts as tools of its own, each by its
+    /// tool's name: `{"cards.put": "card"}` (version 9). Steery's skill and hooks name each so,
+    /// and every other as Steery spells it.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub hosted: BTreeMap<String, String>,
     /// One line on how its transcript file reads; absent: it keeps no transcript file.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub transcript: Option<String>,
@@ -368,6 +377,25 @@ pub struct HarnessInfo {
     /// Every moment of the harness the runtime reads.
     #[serde(default)]
     pub hooks: Vec<harness::Hook>,
+}
+
+/// Who writes a session's lines, its record of what it is doing (§3.1).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum Lines {
+    /// The agent, through Steery's tools.
+    #[default]
+    Agent,
+    /// The harness itself: its agent is told nothing about writing them.
+    Harness,
+}
+
+impl Lines {
+    /// Whether the agent writes them, as an absent `lines` says.
+    pub fn is_agent(&self) -> bool {
+        *self == Lines::Agent
+    }
 }
 
 /// The oldest release of a harness a driver speaks to.

@@ -62,6 +62,7 @@ impl Program for Example {
                     executables: vec!["example".into()],
                     package: None,
                     session_variable: None,
+                    call_meta: None,
                 },
                 setup: wire::SetupFacts {
                     reads_skills: false,

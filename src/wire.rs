@@ -395,6 +395,24 @@ pub struct Identity {
     /// The variable the harness puts its conversation's id in, in its own process.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub session_variable: Option<String>,
+    /// The keys of an MCP call's `_meta` the harness names the call's conversation in
+    /// (version 8), where one MCP client serves every conversation it runs and no header
+    /// can say whose a call is.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub call_meta: Option<CallMeta>,
+}
+
+/// Where in an MCP call's `_meta` its harness names whose call it is (§3.3).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct CallMeta {
+    /// The key whose value is the conversation's id; for a sub-agent's call, its lead's.
+    pub conversation: String,
+    /// The key whose value is the id of the sub-agent making the call, where that differs
+    /// from the conversation's.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sub_agent: Option<String>,
 }
 
 /// What setting a harness up and serving its MCP calls read.

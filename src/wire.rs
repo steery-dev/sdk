@@ -407,8 +407,9 @@ pub struct Identity {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct CallMeta {
-    /// The key whose value is the conversation's id; for a sub-agent's call, its lead's.
-    pub conversation: String,
+    /// The key whose value is the conversation's id, the session Steery files the call
+    /// under; for a sub-agent's call, its lead's.
+    pub session: String,
     /// The key whose value is the id of the sub-agent making the call, where that differs
     /// from the conversation's.
     #[serde(default, skip_serializing_if = "Option::is_none")]

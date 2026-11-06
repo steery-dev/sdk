@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 pub struct InitializeParams {
     /// The protocol versions the runtime speaks.
     pub protocol: Vec<u32>,
-    /// The runtime asking.
+    /// The runtime that asks.
     pub runtime: Runtime,
     /// The person's home folder.
     pub home: PathBuf,
@@ -43,13 +43,14 @@ pub struct Runtime {
     pub arch: String,
 }
 
-/// What a program is: the answer to `initialize`. A driver answers `harness`, an adapter
-/// `machine`, never both.
+/// What a program is: the answer to `initialize`. A driver answers `harness`. An adapter
+/// answers `machine`. A program never answers both.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Initialized {
-    /// The one protocol version the program speaks, from those offered.
+    /// The one protocol version that the program speaks, from the versions that the runtime
+    /// offered.
     pub protocol: u32,
     /// Who the program is.
     pub program: ProgramInfo,
@@ -65,18 +66,24 @@ pub struct Initialized {
 }
 
 impl Initialized {
-    /// What the shapes cannot say themselves (PROTOCOL.md §3): the program's label, short
-    /// name, tint and mark keep their bounds, the kind answers its own object and not the
-    /// other's, a driver's levels each follow the one they need and `live` comes exactly
-    /// with a door, its executables are named, and its hook events are unique. The first
-    /// rule broken, in one line. The id checks itself ([`ProgramId`]).
+    /// Checks the rules that the shapes cannot express (PROTOCOL.md §3):
+    ///
+    /// 1. The program's label, short name, tint and mark stay within their bounds.
+    /// 2. A program answers only the object of its kind: `harness` for a driver, `machine`
+    ///    for an adapter.
+    /// 3. Each level of a driver comes after the level that it needs.
+    /// 4. A driver names `live` exactly when it has a door.
+    /// 5. A driver names its executables.
+    /// 6. The hook events of a driver are unique.
+    ///
+    /// The error is the first broken rule, in one line. The id checks itself ([`ProgramId`]).
     pub fn check(&self) -> Result<(), String> {
         self.program.check()?;
         match (self.program.kind, &self.harness, &self.machine) {
             (Kind::Harness, Some(harness), None) => harness.check(),
             (Kind::Machine, None, Some(machine)) => machine.check(),
-            (Kind::Harness, _, _) => Err("a driver answers `harness` and no `machine`".into()),
-            (Kind::Machine, _, _) => Err("an adapter answers `machine` and no `harness`".into()),
+            (Kind::Harness, _, _) => Err("a driver must answer `harness`, not `machine`".into()),
+            (Kind::Machine, _, _) => Err("an adapter must answer `machine`, not `harness`".into()),
         }
     }
 }
@@ -98,13 +105,13 @@ impl ProgramInfo {
         };
         if !line(&self.label, Self::LABEL_MAX) {
             return Err(format!(
-                "says a `label` that is not one line of 1 to {} characters",
+                "the program's `label` is not one line of 1 to {} characters",
                 Self::LABEL_MAX
             ));
         }
         if !line(&self.short, Self::SHORT_MAX) {
             return Err(format!(
-                "says a `short` that is not 1 to {} characters",
+                "the program's `short` is not 1 to {} characters",
                 Self::SHORT_MAX
             ));
         }
@@ -112,7 +119,7 @@ impl ProgramInfo {
             let hex = tint.strip_prefix('#').unwrap_or_default();
             if hex.len() != 6 || !hex.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f')) {
                 return Err(format!(
-                    "says a `tint` {tint:?} that is not `#rrggbb` in lowercase"
+                    "the program's `tint` {tint:?} is not `#rrggbb` in lowercase"
                 ));
             }
         }
@@ -128,7 +135,7 @@ impl ProgramInfo {
                 })
             {
                 return Err(format!(
-                    "says a `mark` that is not an SVG path's `d` of at most {} bytes",
+                    "the program's `mark` is not an SVG path's `d` of at most {} bytes",
                     Self::MARK_MAX
                 ));
             }
@@ -144,7 +151,7 @@ impl Machine {
                 unavailable: Some(why),
                 ..
             }) if why.trim().is_empty() || why.contains('\n') => {
-                Err("says `unavailable` in other than one line".into())
+                Err("the adapter's `unavailable` is not one line".into())
             }
             _ => Ok(()),
         }
@@ -157,33 +164,33 @@ impl HarnessInfo {
         named.sort();
         named.dedup();
         if named.is_empty() {
-            return Err("names no level".into());
+            return Err("the driver names no level".into());
         }
         if named.len() != self.levels.len() {
-            return Err("names a level twice".into());
+            return Err("the driver names a level twice".into());
         }
         if named[..] != Level::ALL[..named.len()] {
-            return Err("names a level without the one before it".into());
+            return Err("the driver names a level without the level before it".into());
         }
         if named.contains(&Level::Live) != self.facts.door.is_some() {
-            return Err("names `live` without a door, or a door without `live`".into());
+            return Err("the driver names `live` without a door, or a door without `live`".into());
         }
         if self.identity.executables.iter().all(String::is_empty) {
-            return Err("names no executable".into());
+            return Err("the driver names no executable".into());
         }
         let mut events: Vec<&str> = self.hooks.iter().map(|hook| hook.event.as_str()).collect();
         events.sort_unstable();
         if let Some(twice) = events.windows(2).find(|pair| pair[0] == pair[1]) {
-            return Err(format!("names the hook event `{}` twice", twice[0]));
+            return Err(format!("the driver names the hook event `{}` twice", twice[0]));
         }
         Ok(())
     }
 }
 
 /// A program's id (PROTOCOL.md §3): lowercase kebab-case, at most 64 characters. For a
-/// driver it is the harness's id, what `Session.harness` names. Made only through
-/// [`ProgramId::try_from`] or [`str::parse`], so one that is held is valid; on the wire it
-/// is a plain string, and a bad one does not deserialize.
+/// driver, it is the id of the harness, which `Session.harness` names. Only
+/// [`ProgramId::try_from`] and [`str::parse`] make one, so each `ProgramId` is valid. On the
+/// wire it is a plain string, and a bad string does not deserialize.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(try_from = "String", into = "String")]
 pub struct ProgramId(String);
@@ -282,13 +289,14 @@ impl schemars::JsonSchema for ProgramId {
     }
 }
 
-/// Who a program is, and how a person sees it: every surface Steery draws a harness or a
-/// machine on reads these and nothing else.
+/// Who a program is, and how a person sees it. Each surface where Steery draws a harness or a
+/// machine reads these fields and nothing else.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct ProgramInfo {
-    /// What `Session.harness` names for a driver, and a machine's adapter for an adapter.
+    /// For a driver, the id that `Session.harness` names. For an adapter, the id that a
+    /// machine names as its adapter.
     pub id: ProgramId,
     /// Driver or adapter.
     pub kind: Kind,
@@ -302,8 +310,8 @@ pub struct ProgramInfo {
     /// Its colour on a tile, `#rrggbb` in lowercase. Absent: Steery's neutral tint.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tint: Option<String>,
-    /// Its mark: the `d` of one SVG path in a 24 by 24 box, filled with the even-odd rule,
-    /// at most [`Self::MARK_MAX`] bytes. Absent: the tile shows `short`.
+    /// Its mark: the `d` of one SVG path in a 24 by 24 box, at most [`Self::MARK_MAX`] bytes.
+    /// Surfaces fill the path with the even-odd rule. Absent: the tile shows `short`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mark: Option<String>,
 }
@@ -319,7 +327,7 @@ pub enum Kind {
     Machine,
 }
 
-/// How far a driver goes with its harness.
+/// How much of the work with its harness a driver does.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
@@ -333,7 +341,7 @@ pub enum Level {
 }
 
 impl Level {
-    /// Every level, each after the one it needs.
+    /// Every level in order. Each level comes after the level that it needs.
     pub const ALL: [Level; 3] = [Level::Observe, Level::Drive, Level::Live];
 }
 
@@ -342,8 +350,8 @@ impl Level {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct HarnessInfo {
-    /// Its levels; each needs the one before it. `live` is named exactly when
-    /// `facts.door` is.
+    /// Its levels. Each level needs the level before it. The driver names `live` exactly when
+    /// it gives `facts.door`.
     pub levels: Vec<Level>,
     /// The oldest release the driver speaks to.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -353,33 +361,35 @@ pub struct HarnessInfo {
     pub sign_in: Option<String>,
     /// How an agent in this harness learns its conversation's id.
     pub knowing: String,
-    /// Who writes its sessions' lines (version 9). Absent: the agent, which Steery's skill
-    /// and hooks tell how.
+    /// Who writes the lines of its sessions (version 9). Absent: the agent writes them, and
+    /// Steery's skill and hooks tell the agent how.
     #[serde(default, skip_serializing_if = "Lines::is_agent")]
     pub lines: Lines,
-    /// The operations of Steery's catalog the harness hosts as tools of its own, each by its
-    /// tool's name: `{"cards.put": "card"}` (version 9). Steery's skill and hooks name each so,
-    /// and every other as Steery spells it.
+    /// The operations of Steery's catalog that the harness hosts as its own tools, each with
+    /// the name of its tool: `{"cards.put": "card"}` (version 9). Steery's skill and hooks
+    /// name each of these operations by its tool name. They name every other operation as
+    /// Steery spells it.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub hosted: BTreeMap<String, String>,
-    /// One line on how its transcript file reads; absent: it keeps no transcript file.
+    /// One line on how to read its transcript file. Absent: the harness keeps no transcript
+    /// file.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub transcript: Option<String>,
     /// How the runtime recognizes the harness's processes.
     pub identity: Identity,
-    /// What setting the harness up and serving its MCP calls read.
+    /// The facts for the setup of the harness and for its MCP calls.
     pub setup: SetupFacts,
-    /// Its one-shot reader; absent: the driver has none.
+    /// Its one-shot reader. Absent: the driver has no reader.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reader: Option<ReaderFacts>,
     /// What the holder rule and offers read.
     pub facts: HarnessFacts,
-    /// Every moment of the harness the runtime reads.
+    /// Every moment of the harness that the runtime reads.
     #[serde(default)]
     pub hooks: Vec<harness::Hook>,
 }
 
-/// Who writes a session's lines, its record of what it is doing (§3.1).
+/// Who writes the lines of a session: the record of what the session does (§3.1).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
@@ -387,12 +397,12 @@ pub enum Lines {
     /// The agent, through Steery's tools.
     #[default]
     Agent,
-    /// The harness itself: its agent is told nothing about writing them.
+    /// The harness itself. Steery tells its agent nothing about the lines.
     Harness,
 }
 
 impl Lines {
-    /// Whether the agent writes them, as an absent `lines` says.
+    /// Whether the agent writes the lines. An absent `lines` means that it does.
     pub fn is_agent(&self) -> bool {
         *self == Lines::Agent
     }
@@ -415,17 +425,17 @@ pub struct Minimum {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Identity {
-    /// The file names a harness process runs as.
+    /// The file names that a harness process runs as.
     pub executables: Vec<String>,
-    /// A path component naming its package, where an interpreter runs it.
+    /// A path component that names its package, where an interpreter runs the harness.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub package: Option<String>,
-    /// The variable the harness puts its conversation's id in, in its own process.
+    /// The variable in which the harness puts the id of its conversation, in its own process.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub session_variable: Option<String>,
-    /// The keys of an MCP call's `_meta` the harness names the call's conversation in
-    /// (version 8), where one MCP client serves every conversation it runs and no header
-    /// can say whose a call is.
+    /// The keys in an MCP call's `_meta` where the harness names the conversation of the call
+    /// (version 8). They apply where one MCP client serves every conversation that it runs,
+    /// and no header can tell whose call it is.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub call_meta: Option<CallMeta>,
 }
@@ -435,28 +445,28 @@ pub struct Identity {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct CallMeta {
-    /// The key whose value is the conversation's id, the session Steery files the call
-    /// under; for a sub-agent's call, its lead's.
+    /// The key whose value is the id of the conversation: the session that Steery files the
+    /// call under. For a call of a sub-agent, this is the id of its lead.
     pub session: String,
-    /// The key whose value is the id of the sub-agent making the call, where that differs
-    /// from the conversation's.
+    /// The key whose value is the id of the sub-agent that makes the call, where that id
+    /// differs from the id of the conversation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sub_agent: Option<String>,
 }
 
-/// What setting a harness up and serving its MCP calls read.
+/// The facts for the setup of a harness and for its MCP calls.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct SetupFacts {
-    /// The harness reads Steery's skill from the entry `setup/plan` lists; where false,
+    /// True: the harness reads Steery's skill from the entry that `setup/plan` lists. False:
     /// the MCP handshake carries the whole skill.
     pub reads_skills: bool,
-    /// The harness cuts an MCP tool's description before its model reads it, so the
-    /// escalation policies are said whole at `session_start`.
+    /// The harness cuts the description of an MCP tool before its model reads it. So
+    /// `session_start` gives the whole escalation policies.
     pub cuts_tool_text: bool,
-    /// The longest the harness waits for one MCP call, in seconds, where no entry can
-    /// lengthen it.
+    /// The longest time that the harness waits for one MCP call, in seconds, when no entry can
+    /// make this time longer.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub call_bound: Option<u32>,
 }
@@ -466,16 +476,16 @@ pub struct SetupFacts {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct ReaderFacts {
-    /// What the reader shuts out.
+    /// What the reader blocks.
     pub sealed: Sealed,
-    /// Models the reader runs that `models` may not list.
+    /// Models that the reader runs, which `models` possibly does not list.
     #[serde(default)]
     pub known: Vec<String>,
-    /// The reader runs the harness's own model when given none.
+    /// The reader runs the harness's own model when it gets no model.
     pub unnamed: bool,
 }
 
-/// What a reader shuts out (true) or still reaches (false).
+/// What a reader blocks (true) or can still reach (false).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -497,26 +507,27 @@ pub struct Sealed {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct HarnessFacts {
-    /// A conversation is continued by its transcript path, not its id.
+    /// A continue names a conversation by its transcript path, not by its id.
     pub by_file: bool,
     /// A continue runs only in the folder the conversation ran in.
     pub resumes_in_place: bool,
-    /// A fork may run beside a live writer.
+    /// A fork can run beside a live writer.
     pub forks_beside: bool,
-    /// What a continue keeps without being told.
+    /// What a continue keeps without an instruction.
     pub keeps: Keeps,
-    /// How a live conversation is reached; absent: there is no live door.
+    /// How the runtime reaches a live conversation. Absent: there is no live door.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub door: Option<harness::LiveDoor>,
-    /// The door checks the conversation idle itself as it takes words.
+    /// The door itself checks that the conversation is idle when it takes words.
     pub checks_idle: bool,
-    /// `start` makes a new worktree for a fork or a new conversation when asked.
+    /// `start` makes a new worktree for a fork or a new conversation when the call asks for
+    /// one.
     pub worktrees: bool,
-    /// The acts the harness does at all.
+    /// Every act that the harness can do.
     pub acts: Vec<harness::Act>,
 }
 
-/// What a continue keeps without being told.
+/// What a continue keeps without an instruction.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -545,7 +556,7 @@ pub enum Machine {
 pub struct ProcessFacts {
     /// The operating system.
     pub os: Os,
-    /// The service manager that keeps the runtime running.
+    /// The service manager that keeps the runtime in operation.
     pub service: ServiceManager,
 }
 
@@ -579,18 +590,18 @@ pub struct HostFacts {
     pub persist: Option<PathBuf>,
     /// The vendor's own idle timer.
     pub idle: Idle,
-    /// The optional methods it has, by their last word.
+    /// The optional methods that it has, each by the last word of its name.
     #[serde(default)]
     pub optional: Vec<Optional>,
-    /// It takes `hosts/ensure`'s `source: {dockerfile}`.
+    /// It accepts `source: {dockerfile}` in `hosts/ensure`.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub builds: bool,
     /// How `hosts/channel` reaches a host.
     pub channel: Channel,
     /// The operating system inside its hosts.
     pub os: Os,
-    /// Why no host of this adapter can be had from this computer, whatever the
-    /// settings: one line naming what to install or change. Absent: one can.
+    /// Why this computer cannot get a host from this adapter, with any settings. It is one
+    /// line that names what to install or change. Absent: this computer can get a host.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unavailable: Option<String>,
 }
@@ -621,7 +632,7 @@ pub enum Idle {
     None,
 }
 
-/// An optional method of an adapter that makes hosts, by its last word.
+/// An optional method of an adapter that makes hosts, by the last word of its name.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
@@ -651,7 +662,7 @@ pub enum Channel {
 pub struct Setting {
     /// Its name, as `initialize` passes it.
     pub name: String,
-    /// Kept in the runtime's private config folder and never shown again.
+    /// The runtime keeps it in its private config folder and never shows it again.
     #[serde(default)]
     pub secret: bool,
     /// The program does not run without it.
@@ -661,7 +672,7 @@ pub struct Setting {
     pub about: String,
 }
 
-/// The empty object: the parameters of a method that takes none, and the result of one
+/// The empty object: the parameters of a method that takes none, and the result of a method
 /// that says nothing.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]

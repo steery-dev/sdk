@@ -1,5 +1,5 @@
-//! The plugin door, version 1 (PROTOCOL.md §4.4): WebSocket text frames between Steery's
-//! plugin in a harness and the runtime's loopback listener, each tagged by `t`.
+//! The plugin door, version 1 (PROTOCOL.md §4.4). It carries WebSocket text frames between
+//! Steery's plugin in a harness and the runtime's loopback listener. The field `t` tags each frame.
 
 use std::path::PathBuf;
 
@@ -10,21 +10,21 @@ use super::harness::{LiveState, Record, SessionRef, Voice};
 
 /// The door version this crate speaks.
 pub const DOOR: u32 = 1;
-/// The path a plugin dials on the runtime's loopback listener.
+/// The path that a plugin connects to on the runtime's loopback listener.
 pub const PATH: &str = "/door";
-/// The longest frame either side reads.
+/// The longest frame that each side reads.
 pub const FRAME_MAX: usize = 16 << 20;
-/// The most bytes of records one `entries` frame carries, and the largest record sent with
-/// its value: a larger one goes as its id alone.
+/// The most bytes of records that one `entries` frame carries. It is also the largest record
+/// that a frame sends with its value. A frame sends a larger record as its id alone.
 pub const RECORDS_MAX: usize = 8 << 20;
-/// The variable naming the `compact` ask a one-shot run answers before its own turn.
+/// The variable that names the `compact` ask, which a one-shot run answers before its own turn.
 pub const COMPACT_VAR: &str = "STEERY_COMPACT";
-/// The file beside that ask its answer frame is written to.
+/// The file beside that ask where the run writes its answer frame.
 pub const COMPACTED_FILE: &str = "compacted.json";
 /// The shortest time between two `live` frames of one message.
 pub const LIVE_EVERY_MS: u64 = 16;
-/// The most bytes of one `live` frame: a longer one sends its parts cut to fit, and the next
-/// frame goes on from there.
+/// The most bytes of one `live` frame. A longer frame sends its parts cut to fit. The next
+/// frame continues from the cut.
 pub const LIVE_FRAME_MAX: usize = 64 << 10;
 
 /// Close codes the runtime sends.
@@ -42,7 +42,7 @@ pub mod close {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(tag = "t", rename_all = "snake_case", deny_unknown_fields)]
 pub enum PluginFrame {
-    /// The first frame, within 5 s.
+    /// The first frame. The plugin sends it within 5 s.
     Hello {
         /// The door version the plugin speaks.
         door: u32,
@@ -50,22 +50,23 @@ pub enum PluginFrame {
         harness: String,
         /// The harness process.
         pid: u32,
-        /// The conversation this copy is in; a sub-agent's own id where it is one.
+        /// The conversation that this copy is in. For a sub-agent, the sub-agent's own id.
         session_id: String,
         mode: DoorMode,
-        /// The conversation a sub-agent's copy works in.
+        /// The conversation that the copy of a sub-agent works in.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         lead: Option<SessionRef>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         state: Option<LiveState>,
-        /// The folder the conversation runs in, as the harness holds it now.
+        /// The folder that the conversation runs in, as the harness has it now.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         cwd: Option<PathBuf>,
     },
     /// The whole state, when it changes.
     State { state: LiveState },
-    /// A moment of a hook `via: door`: the harness's own payload, which the runtime reads
-    /// with `hook/read` as it reads a command hook's document. A moment `id` is read once.
+    /// A moment of a hook with `via: door`: the harness's own payload. The runtime reads it
+    /// with `hook/read`, as it reads the document of a command hook. The runtime reads each
+    /// moment `id` once.
     Moment {
         id: String,
         /// The `Hook.event` it is.
@@ -73,7 +74,7 @@ pub enum PluginFrame {
         /// The harness's hook payload, as the plugin got it.
         document: Value,
     },
-    /// A turn of the copy's own ended.
+    /// A turn that the copy itself ran ended.
     Settle {
         id: String,
         /// The turn asked its person something.
@@ -82,10 +83,11 @@ pub enum PluginFrame {
         parked: bool,
         /// The turn waits on a Steery request.
         waiting: bool,
-        /// The turn was already kept going once.
+        /// The plugin already continued this turn once.
         continued: bool,
     },
-    /// The answer to an ask: `ok` the op's answer, or `refused` with the harness's line.
+    /// The answer to an ask: `ok` with the answer of the op, or `refused` with the line of the
+    /// harness.
     Answer {
         id: String,
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -95,11 +97,11 @@ pub enum PluginFrame {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         error: Option<String>,
     },
-    /// The harness's records after `after`, in the order it appended them; sent only on a
-    /// connection welcomed with `entries`.
+    /// The records of the harness after `after`, in the order that the harness appended them.
+    /// The plugin sends them only on a connection that the runtime welcomed with `entries`.
     Entries {
-        /// The id of the record before the first one here; absent: these start at the
-        /// conversation's first record.
+        /// The id of the record before the first record in this frame. Absent: these records
+        /// start at the first record of the conversation.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         after: Option<String>,
         records: Vec<Record>,
@@ -107,27 +109,28 @@ pub enum PluginFrame {
     /// The copy cannot continue from `welcome.entries.after`: this connection carries no
     /// entries.
     Lost { why: String },
-    /// The agent's message as it is being written; sent only on a connection welcomed with
-    /// `live`.
+    /// The message of the agent while the agent writes it. The plugin sends it only on a
+    /// connection that the runtime welcomed with `live`.
     Live(Live),
 }
 
-/// One assistant message being written, as the harness has it so far.
+/// One assistant message while the agent writes it, as the harness has it now.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Live {
-    /// The harness's key of the message, stable from its first frame to its last: the
-    /// reply's identity, as `words.message` names it in the record.
+    /// The harness's key for the message. It stays the same from the first frame to the last.
+    /// It is the identity of the reply, as `words.message` names it in the record.
     pub message: String,
-    /// The newest piece, milliseconds since 1970 on the harness's clock.
+    /// The time of the newest piece, in milliseconds since 1970 on the harness's clock.
     pub at: u64,
-    /// The first piece of this message, on the same clock.
+    /// The time of the first piece of this message, on the same clock.
     pub first_at: u64,
     /// What changed, per voice.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub parts: Vec<LivePart>,
-    /// The tool a call being formed names, before its input is sent.
+    /// The tool that a call names while the agent forms the call, before the agent sends its
+    /// input.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub forming: Option<String>,
     /// The message ended: every part of it came before this frame or in it.
@@ -135,16 +138,16 @@ pub struct Live {
     pub end: Option<LiveEnd>,
 }
 
-/// One voice's text of a live message from `from` on. The voice's whole text is its non-blank
-/// blocks joined with `"\n"`, as the fold joins them.
+/// The text of one voice in a live message, from `from` to the end. The whole text of the
+/// voice is its non-blank blocks, joined with `"\n"` as the fold joins them.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct LivePart {
     /// `agent` or `thought`.
     pub voice: Voice,
-    /// Where `text` starts in the voice's whole text, in Unicode scalar values. What was held
-    /// from there on is replaced.
+    /// Where `text` starts in the whole text of the voice, in Unicode scalar values. `text`
+    /// replaces all the text held from that point on.
     pub from: u32,
     pub text: String,
 }
@@ -181,7 +184,7 @@ pub enum LiveStop {
 pub enum DoorMode {
     /// A person at a terminal.
     Tui,
-    /// A program drawing for a person.
+    /// A program that draws for a person.
     Rpc,
     /// A one-shot run.
     Json,
@@ -190,7 +193,7 @@ pub enum DoorMode {
 }
 
 impl DoorMode {
-    /// A person, or a program drawing for one, is at it.
+    /// True when a person, or a program that draws for a person, is at the harness.
     pub fn interactive(self) -> bool {
         matches!(self, Self::Tui | Self::Rpc)
     }
@@ -201,8 +204,8 @@ impl DoorMode {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(tag = "t", rename_all = "snake_case", deny_unknown_fields)]
 pub enum RuntimeFrame {
-    /// The hello was taken. `entries`: this runtime takes the harness's records. `live`: it
-    /// takes `live` frames.
+    /// The runtime accepted the hello. `entries`: this runtime takes the records of the
+    /// harness. `live`: it takes `live` frames.
     Welcome {
         door: u32,
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -216,12 +219,12 @@ pub enum RuntimeFrame {
     Ask(Ask),
 }
 
-/// Where a welcomed copy starts its `entries` frames.
+/// Where a copy that the runtime welcomed starts its `entries` frames.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct DoorEntries {
-    /// The id of the last record the runtime holds; absent: from the first record.
+    /// The id of the last record that the runtime holds. Absent: start from the first record.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub after: Option<String>,
 }
@@ -231,7 +234,7 @@ pub struct DoorEntries {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Spoken {
-    /// A paragraph for the agent; after a settle, the plugin keeps the agent going with it.
+    /// A paragraph for the agent. After a settle, the plugin uses it to make the agent continue.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub say: Option<String>,
 }
@@ -241,19 +244,21 @@ pub struct Spoken {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Ask {
-    /// Words into the conversation; answered with [`DoorSaid`] once the harness holds them,
-    /// and, asked again under the same `id` while it holds them, once it took them.
+    /// Words into the conversation. The copy answers with [`DoorSaid`] when the harness holds
+    /// the words. When the runtime asks again under the same `id` while the harness holds
+    /// them, the copy answers when the harness took them.
     Say {
         id: String,
         words: String,
         mode: DoorSayMode,
-        /// Only where the conversation is idle; else `harness-busy`, nothing handed over.
+        /// Only when the conversation is idle. Else the copy refuses with `harness-busy` and
+        /// gives nothing to the harness.
         idle: bool,
-        /// One throw's words go in once.
+        /// The words of one throw go in only once.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         throw: Option<String>,
     },
-    /// A model and thinking; answered with [`super::harness::Picked`].
+    /// A model and thinking. The copy answers with [`super::harness::Picked`].
     Pick {
         id: String,
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -261,22 +266,26 @@ pub enum Ask {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         thinking: Option<String>,
     },
-    /// Stop the turn running; answered with [`DoorStopped`]. Without `say`, the person's
-    /// pause.
+    /// Stop the turn that runs now. The copy answers with [`DoorStopped`]. Without `say`, this
+    /// is the person's pause.
     Stop {
         id: String,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         say: Option<String>,
     },
-    /// Force the words of `say`, held by the harness and not yet taken, in now: the turn
-    /// running is aborted, its conversation not parked, and the harness takes them as its
-    /// next input; words it let go with the abort are handed again, once. Answered with
-    /// [`DoorStopped`].
+    /// Force the words of `say` in now. The harness holds these words and did not take them yet.
+    ///
+    /// 1. The copy aborts the turn that runs now. It does not park the conversation.
+    /// 2. The harness takes the words as its next input.
+    /// 3. The copy gives again, once, the words that the harness let go with the abort.
+    ///
+    /// The copy answers with [`DoorStopped`].
     Force { id: String, say: String },
-    /// Where the conversation stands, in its own model's words; answered with
+    /// The state of the conversation, in the words of its own model. The copy answers with
     /// [`super::harness::Text`].
     Recap { id: String },
-    /// Forget everything before a cut in favour of `summary`; answered with [`DoorCompacted`].
+    /// Forget everything before a cut, and keep `summary` in its place. The copy answers with
+    /// [`DoorCompacted`].
     Compact { id: String, before: u64, summary: String, least: u64 },
 }
 
@@ -285,15 +294,16 @@ pub enum Ask {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum DoorSayMode {
-    /// Into the turn running.
+    /// Into the turn that runs now.
     Steer,
-    /// After it.
+    /// After that turn.
     Queue,
 }
 
-/// What a door's say did: when the harness held the words, and when it took them into
-/// its turn, each milliseconds since 1970 on the harness's clock. `queued_at` without
-/// `taken_at`: held, not yet taken. Neither: taken, not dated.
+/// What the say of a door did. `queued_at` is when the harness held the words. `taken_at` is
+/// when the harness took them into its turn. Both are milliseconds since 1970 on the harness's
+/// clock. `queued_at` without `taken_at`: the harness holds the words and did not take them
+/// yet. Neither: the harness took the words, and the answer gives no time.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -309,9 +319,9 @@ pub struct DoorSaid {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct DoorStopped {
-    /// A turn was stopped.
+    /// The copy stopped a turn.
     pub stopped: bool,
-    /// Background jobs still running.
+    /// The background jobs that still run.
     #[serde(default)]
     pub running: Vec<String>,
 }
@@ -323,15 +333,16 @@ pub struct DoorStopped {
 pub struct DoorCompacted {
     /// Milliseconds since 1970: when the context starts after the ask.
     pub from: u64,
-    /// Estimated tokens forgotten; 0 where nothing was.
+    /// The estimated count of tokens that the harness forgot. 0 when it forgot nothing.
     pub forgot: u64,
 }
 
-/// Refusal words of the door's own. It speaks [`crate::refusal::OTHER_TURN`] too: the
-/// turn running is not one the given `say` began.
+/// The door's own refusal words. The door also speaks [`crate::refusal::OTHER_TURN`]: the
+/// turn that runs now is not a turn that the given `say` started.
 pub mod refusal {
-    /// The copy is letting the conversation go and took nothing.
+    /// The copy releases the conversation. It took nothing.
     pub const ENDING: &str = "ending";
-    /// A say asked again: the harness let its words go unseen, and nothing of them is in.
+    /// The runtime asked a say again: the harness dropped its words unseen. No part of them
+    /// went in.
     pub const NOT_TAKEN: &str = "not-taken";
 }

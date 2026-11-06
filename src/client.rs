@@ -1,4 +1,4 @@
-//! The runtime's side: start a program, speak to it, and end it (PROTOCOL.md §2).
+//! The side of the runtime: start a program, speak to it, and end it (PROTOCOL.md §2).
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -18,7 +18,7 @@ use crate::{INVALID_CODE, REFUSED_CODE, UNKNOWN_CODE, frame, method, wire};
 /// and after SIGTERM before it is killed.
 const GRACE: Duration = Duration::from_secs(5);
 
-/// A notification a program sent.
+/// A notification that a program sent.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Notification {
     pub method: String,
@@ -28,20 +28,21 @@ pub struct Notification {
 /// Why a call has no result.
 #[derive(Debug, thiserror::Error)]
 pub enum CallError {
-    /// The program refused: `word` as it gave it, `line` its one line for a person.
+    /// The program refused. `word` is the word that it gave, and `line` is its one line for
+    /// a person.
     #[error("refused: {word}")]
     Refused { word: String, line: Option<String> },
     /// The program has no such method.
     #[error("unknown method")]
     Unknown,
-    /// No answer within the method's bound.
+    /// The program did not answer within the bound of the method.
     #[error("no answer in time")]
     Timeout,
-    /// The program's standard input or output closed.
+    /// The standard input or output of the program closed.
     #[error("the program closed")]
     Closed,
-    /// The program read the parameters as invalid, or answered something that does not
-    /// read as the method's result.
+    /// The program found the parameters invalid, or it gave an answer that does not match
+    /// the result of the method.
     #[error("invalid: {0}")]
     Invalid(String),
     /// Any other JSON-RPC error.
@@ -72,8 +73,8 @@ pub struct Client {
 }
 
 impl Client {
-    /// Start `command` with `args`. Its standard error is appended to `stderr_log`, or
-    /// is this process's own where there is none.
+    /// Start `command` with `args`. The client appends its standard error to `stderr_log`.
+    /// Without `stderr_log`, the program uses the standard error of this process.
     pub async fn spawn(
         command: &Path,
         args: &[String],
@@ -112,10 +113,10 @@ impl Client {
         })
     }
 
-    /// Send `initialize`, and read what the program is. A program that names a protocol
-    /// version `params` did not offer, or breaks a rule [`wire::Initialized::check`]
-    /// reads, is [`CallError::Invalid`]. The version it names is then
-    /// [`Client::protocol`].
+    /// Send `initialize`, and read what the program is. The result is [`CallError::Invalid`]
+    /// when the program names a protocol version that `params` did not offer, or breaks a
+    /// rule that [`wire::Initialized::check`] reads. Then [`Client::protocol`] is the
+    /// version that the program names.
     pub async fn initialize(
         &self,
         params: &wire::InitializeParams,
@@ -132,14 +133,14 @@ impl Client {
         Ok(initialized)
     }
 
-    /// The protocol version the program picked, once it answered `initialize`.
+    /// The protocol version that the program picked, after it answered `initialize`.
     pub fn protocol(&self) -> Option<u32> {
         self.protocol.get().copied()
     }
 
-    /// Ask the request `M` with `params`, waiting at most its bound (PROTOCOL.md §9), and
-    /// read its answer as its result. A request newer than the version the program picked
-    /// is [`CallError::Unknown`], and is never sent.
+    /// Send the request `M` with `params`, wait at most its bound (PROTOCOL.md §9), and read
+    /// the answer as its result. A request newer than the version that the program picked
+    /// gives [`CallError::Unknown`]. The client does not send it.
     pub async fn ask<M: method::Method>(&self, params: &M::Params) -> Result<M::Result, CallError> {
         if self.protocol().is_some_and(|picked| picked < M::SINCE) {
             return Err(CallError::Unknown);
@@ -149,7 +150,7 @@ impl Client {
         serde_json::from_value(answer).map_err(|e| CallError::Invalid(e.to_string()))
     }
 
-    /// Call `method` under a new id, waiting at most `within`.
+    /// Call `method` under a new id, and wait at most `within`.
     pub async fn call(
         &self,
         method: &str,
@@ -160,12 +161,14 @@ impl Client {
         self.call_as(&id, method, params, within).await
     }
 
-    /// Call `method` under `id`, waiting at most `within` for the request to be written and
-    /// answered together. The same id sent again with the same method and parameters is
-    /// answered from its first result. A request whose writing was cut short, by `within`
-    /// or by its caller, kills the program: half a line is on its input, and one that stops
-    /// reading would hold every later call behind it. Every call in flight then reads
-    /// [`CallError::Closed`], and the next start is a fresh process.
+    /// Call `method` under `id`. Wait at most `within` for the client to write the request
+    /// and get the answer. When the same id comes again with the same method and parameters,
+    /// the client answers it with the first result.
+    ///
+    /// When `within` or the caller stops the write of a request before it is complete, the
+    /// client kills the program. Half a line is then on the input of the program. A program
+    /// that no longer reads its input would hold back each later call. Each call in progress then
+    /// gets [`CallError::Closed`], and the next start makes a new process.
     pub async fn call_as(
         &self,
         id: &str,
@@ -209,7 +212,8 @@ impl Client {
         }
     }
 
-    /// The program's notifications, in the order it sent them. `Some` the first time only.
+    /// The notifications of the program, in the order that it sent them. `Some` only the
+    /// first time.
     pub fn notifications(&self) -> Option<mpsc::UnboundedReceiver<Notification>> {
         self.notifications
             .lock()
@@ -217,8 +221,8 @@ impl Client {
             .take()
     }
 
-    /// Send `shutdown`, wait for its answer, close standard input, and send SIGTERM to a
-    /// program still running 5 s later; one still running 5 s after that is killed.
+    /// Send `shutdown`, wait for its answer, and close standard input. When the program
+    /// still runs 5 s later, send SIGTERM. When it still runs 5 s after that, kill it.
     pub async fn shutdown(mut self) -> std::io::Result<std::process::ExitStatus> {
         let _ = self.ask::<method::Shutdown>(&wire::Empty {}).await;
         drop(self.stdin.lock().await.take());

@@ -23,10 +23,10 @@ pub struct Hook {
     /// The paragraphs a moment of this event can give the agent.
     #[serde(default)]
     pub says: Vec<Says>,
-    /// The seconds the harness gives this hook before it goes on without it.
+    /// The seconds that the harness waits for this hook before it continues without it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub waits: Option<u32>,
-    /// Variables of the hook's process the driver reads.
+    /// The variables of the hook's process that the driver reads.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub env: Vec<String>,
 }
@@ -38,11 +38,11 @@ pub struct Hook {
 pub enum HookKind {
     /// A conversation opened: no claim about a turn.
     SessionStart,
-    /// A person's instruction went in: the agent works.
+    /// A person gave an instruction: the agent works.
     Prompt,
     /// A call is about to run: the agent waits on it.
     BeforeCall,
-    /// A call came back: the agent works.
+    /// A call returned: the agent works.
     AfterCall,
     /// A turn ended.
     TurnEnd,
@@ -54,8 +54,8 @@ pub enum HookKind {
     Notification,
     /// A sub-agent starts: no claim about a turn.
     SubAgentStart,
-    /// What the conversation runs on changed (its model): no claim about a turn, and
-    /// nothing else of where it stands.
+    /// The model of the conversation changed. This moment makes no claim about a turn, or
+    /// about other state of the conversation.
     Changed,
 }
 
@@ -75,10 +75,10 @@ pub enum Via {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum Says {
-    /// Steery's paragraph for the conversation; at a `turn_end` it keeps the agent going,
-    /// at a `sub_agent_start` it reaches the sub-agent.
+    /// Steery's paragraph for the conversation. At a `turn_end`, it makes the agent
+    /// continue. At a `sub_agent_start`, it goes to the sub-agent.
     Context,
-    /// That words wait for the agent.
+    /// A notice that words wait for the agent.
     Notice,
     /// A line about the shell command a call runs.
     Calls,
@@ -89,7 +89,7 @@ pub enum Says {
 // ---------------------------------------------------------------------------------------
 // Observe (§4.1)
 
-/// `setup/plan`: what setting the harness up for Steery writes.
+/// `setup/plan`: what the runtime writes to configure the harness for Steery.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -98,23 +98,25 @@ pub struct Setup {
     pub mcp_url: String,
     /// The skill's Markdown.
     pub skill: String,
-    /// The command line a hook runs; the hook's event is added as one more argument.
+    /// The command line that a hook runs. The driver adds the hook's event as one more
+    /// argument.
     pub hook: String,
-    /// The runtime's loopback door URL, which a `plugin` door dials.
+    /// The runtime's loopback door URL, which a `plugin` door connects to.
     pub door: String,
     /// The runtime's release.
     pub release: String,
-    /// The seconds an MCP entry gives one call.
+    /// The seconds that an MCP entry gives one call.
     pub timeout: u32,
-    /// Folders a harness that runs only where a person trusted the folder may run in here,
-    /// trusted as that person would: those of a host an adapter made for its conversations,
-    /// whose terminal nobody opens to answer the harness's prompt. Empty on a person's own
-    /// computer, where the person trusts a folder themselves.
+    /// Folders where a harness can run here as if its person trusted them. This applies to
+    /// a harness that runs only in a folder that a person trusted. The folders are those of
+    /// a host that an adapter made for its conversations. Nobody opens the terminal of that
+    /// host to answer the harness's prompt. Empty on a person's own computer, where the
+    /// person trusts a folder themselves.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub trusts: Vec<PathBuf>,
 }
 
-/// The harness found here, and the entries that set it up.
+/// The harness that the driver found here, and the entries that configure it.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -122,7 +124,7 @@ pub struct Planned {
     /// The harness, where it is installed here; absent where it is not.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub found: Option<Found>,
-    /// Why Steery does not set this harness up here, in one line.
+    /// Why Steery does not configure this harness here, in one line.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub refused: Option<String>,
     /// What the runtime writes into the harness, and nothing else.
@@ -130,29 +132,32 @@ pub struct Planned {
     /// Lines for a person about the setup.
     #[serde(default)]
     pub notes: Vec<String>,
-    /// How the harness is installed here, where it is not (`found` absent) and its
-    /// driver can install it: its vendor's own installer.
+    /// The vendor's own installer for the harness. Present only where the harness is not
+    /// installed here (`found` absent) and its driver can install it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub install: Option<Install>,
-    /// What the harness lacks here that only its person can give (a sign-in, a setting),
-    /// each asked on one card and given back by `needs/give`; version 5 only, empty in an
-    /// older one.
+    /// What the harness lacks here that only its person can give, for example a sign-in or
+    /// a setting. Steery asks for each need on one card, and the runtime gives the answer
+    /// back by `needs/give`. Version 5 only: empty in an older version.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub needs: Vec<Need>,
 }
 
-/// What a harness lacks on this host that only its person can give, and the ways they can.
+/// What a harness lacks on this host that only its person can give, and the ways that the
+/// person can give it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Need {
-    /// The same for this lack in every plan (`sign-in`): what `needs/give` names.
+    /// The id of this need, the same in every plan (`sign-in`). `needs/give` names the need
+    /// by this id.
     pub id: String,
     /// The card's title: a short question its person answers (`Sign Claude Code in?`).
     pub title: String,
     /// What is missing and what it stops, in one line.
     pub line: String,
-    /// Each way its person can give it, the driver's pick first; at least one.
+    /// Each way that the person can give it, with the driver's preferred way first. At
+    /// least one.
     pub ways: Vec<Way>,
 }
 
@@ -161,35 +166,37 @@ pub struct Need {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Way {
-    /// The same for this way of its need in every plan (`api-key`).
+    /// The id of this way of its need, the same in every plan (`api-key`).
     pub id: String,
     /// What it does, in a few plain words (`Use your API key`).
     pub label: String,
     /// Its cost or risk, in one line.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub about: Option<String>,
-    /// The page its person opens first: where a key is made, or an authorize page.
+    /// The page that the person opens first: the page that makes a key, or an authorize
+    /// page.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub link: Option<NeedLink>,
-    /// What its person types, each given back by its `name`.
+    /// The values that the person types. The runtime gives each one back by its `name`.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub fields: Vec<Field>,
-    /// When what it holds ends (a sign-in started for it), in milliseconds since 1970 (§2).
+    /// When the state that this way holds ends (for example, a sign-in that the driver
+    /// started for it), in milliseconds since 1970 (§2).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ends_at: Option<u64>,
 }
 
-/// A page a way's person opens.
+/// A page that the person opens for a way.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct NeedLink {
-    /// What its button says.
+    /// The text of its button.
     pub label: String,
     /// Its address.
     pub url: String,
-    /// The field its return address fills, where the page sends the browser back to a
-    /// loopback address that the app that opened it catches.
+    /// The field that the return address of the page fills. Only where the page sends the
+    /// browser back to a loopback address, and the app that opened the page receives it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fills: Option<String>,
 }
@@ -206,7 +213,7 @@ pub struct Field {
     /// Where its value comes from, in one line.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub about: Option<String>,
-    /// A secret: never shown again once typed.
+    /// A secret: Steery never shows it again after the person types it.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub secret: bool,
 }
@@ -220,41 +227,44 @@ pub struct Give {
     pub need: String,
     /// The way's `id`.
     pub way: String,
-    /// Each of the way's fields its person filled, by name.
+    /// Each field of the way that the person filled, by name.
     #[serde(default)]
     pub values: BTreeMap<String, String>,
 }
 
-/// What came of a [`Give`].
+/// The result of a [`Give`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case", deny_unknown_fields)]
 pub enum Given {
     /// The need is met.
     Done {
-        /// What came of it, in one line (`Signed in as ada@example.com`).
+        /// The result, in one line (`Signed in as ada@example.com`).
         line: String,
-        /// Variables the runtime keeps for this harness on this machine, sealed, and adds
-        /// to every process of it on every host from now on; empty where what was given
-        /// stays in this host.
+        /// Variables that the runtime keeps sealed for this harness on this machine. From
+        /// now on, the runtime adds them to every process of the harness on every host.
+        /// Empty where the given values stay in this host.
         #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
         env: BTreeMap<String, String>,
     },
-    /// One more step: this way is asked next (a started sign-in's link and code).
+    /// One more step: Steery asks for this way next (for example, the link and code of a
+    /// sign-in that started).
     Next(Way),
 }
 
-/// A harness's vendor's own installer, which the runtime runs only once a person agreed
-/// (at a terminal, or by `steery setup --install`), shown to them as `about` and `argv`,
-/// or by itself on a host an adapter made from no source of its person's.
+/// The harness vendor's own installer. The runtime shows `about` and `argv` to a person.
+/// It runs the installer only after the person agrees, at a terminal or by
+/// `steery setup --install`. On a host that an adapter made from no source of its
+/// person's, the runtime runs the installer by itself.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Install {
-    /// What runs, run as is with the person's environment and no standard input.
+    /// The command that runs. The runtime runs it as it is, with the person's environment
+    /// and no standard input.
     pub argv: Vec<String>,
-    /// One line a person reads before agreeing, holding the exact command line `argv`
-    /// runs and where it installs the harness.
+    /// One line that a person reads before they agree. It holds the exact command line that
+    /// `argv` runs, and where it installs the harness.
     pub about: String,
 }
 
@@ -263,7 +273,7 @@ pub struct Install {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Found {
-    /// Its binary.
+    /// Its executable.
     pub binary: PathBuf,
     /// Its release.
     pub release: String,
@@ -271,26 +281,26 @@ pub struct Found {
     pub root: PathBuf,
 }
 
-/// One place in one file the runtime writes, merges byte-exactly, records, and gives back
-/// when the harness is removed.
+/// One place in one file that the runtime writes. The runtime merges it byte-exactly,
+/// records it, and gives it back when it removes the harness.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Entry {
     /// The absolute file.
     pub path: PathBuf,
-    /// How the file reads.
+    /// The format of the file.
     pub format: Format,
     /// The place in it: a JSON Pointer or a TOML key path; absent: the whole file.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub at: Option<String>,
-    /// What goes there; a `text` file's is a string.
+    /// The value at that place. For a `text` file, the value is a string.
     pub value: Value,
     /// What reaches the harness through it.
     pub carries: Vec<Part>,
 }
 
-/// How a setup file reads.
+/// The format of a setup file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
@@ -311,7 +321,7 @@ pub enum Part {
     Skill,
     /// The hooks that run `<hook> <event>`.
     Hooks,
-    /// Steery's plugin, which dials the door.
+    /// Steery's plugin, which connects to the door.
     Plugin,
 }
 
@@ -320,10 +330,11 @@ pub enum Part {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct List {
-    /// Only those updated since.
+    /// Only the conversations that changed since this time.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub seen_since: Option<u64>,
-    /// Transcripts the harness's own moments named, which may lie outside its folders.
+    /// Transcripts that the harness's own moments named. They can be outside the harness's
+    /// folders.
     #[serde(default)]
     pub transcripts: Vec<PathBuf>,
 }
@@ -335,10 +346,12 @@ pub struct List {
 pub struct Listed {
     /// Each one.
     pub sessions: Vec<Session>,
-    /// Ids whose every transcript is no conversation: a sub-agent, a run with no person.
+    /// Ids where no transcript is a conversation: for example, a sub-agent or a run with no
+    /// person.
     #[serde(default)]
     pub excluded: Vec<String>,
-    /// No file named its conversation ambiguously: one absent is gone.
+    /// True when no file names its conversation ambiguously. Then a conversation that is
+    /// not in the list is gone.
     pub complete: bool,
 }
 
@@ -360,21 +373,21 @@ pub struct Session {
     pub created_at: Option<u64>,
     /// When it last changed.
     pub updated_at: u64,
-    /// Every file of it on this host, oldest first: at least one where the harness
-    /// keeps transcript files (`HarnessInfo.transcript`), none where it does not.
+    /// Every file of it on this host, oldest first. At least one where the harness keeps
+    /// transcript files (`HarnessInfo.transcript`), and none where it does not.
     pub transcripts: Vec<PathBuf>,
-    /// The conversation it was forked from.
+    /// The conversation that this one is a fork of.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<String>,
-    /// It was started in the harness's app.
+    /// It started in the harness's app.
     #[serde(default)]
     pub app: bool,
-    /// The sub-agents working in it.
+    /// The sub-agents that work in it.
     #[serde(default)]
     pub sub_agents: Vec<SubAgent>,
 }
 
-/// A sub-agent working in a conversation.
+/// A sub-agent that works in a conversation.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -387,7 +400,7 @@ pub struct SubAgent {
     /// Its name or role.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    /// The first line of what it was asked.
+    /// The first line of the task that it got.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub task: Option<String>,
     /// When it started.
@@ -400,7 +413,7 @@ pub struct SubAgent {
     pub transcripts: Vec<PathBuf>,
 }
 
-/// `sessions/locate`: one conversation by its id, however old.
+/// `sessions/locate`: one conversation by its id, of any age.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -414,7 +427,7 @@ pub struct Locate {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Located {
-    /// It.
+    /// The conversation.
     pub session: Session,
 }
 
@@ -425,7 +438,7 @@ pub struct Located {
 pub struct Read {
     /// The conversation.
     pub external_id: String,
-    /// One of its sub-agents, read instead.
+    /// One of its sub-agents, to read in place of the conversation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sub_agent: Option<String>,
     /// Where the last read or fold ended; absent: from the beginning.
@@ -441,32 +454,32 @@ pub struct Read {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Events {
-    /// Where this read ended, for the next: opaque, between whole records.
+    /// Where this read ended, for the next read. Opaque, and always between whole records.
     pub cursor: String,
     /// Each one, in order.
     pub events: Vec<Event>,
-    /// Events remain past this answer.
+    /// More events remain after this answer.
     pub more: bool,
-    /// The transcript was rewritten: these start again from the beginning.
+    /// The harness rewrote the transcript: these events start again from the beginning.
     pub reset: bool,
-    /// These start at the conversation's beginning.
+    /// These events start at the conversation's beginning.
     pub whole: bool,
-    /// The id of the newest record such that every record written before it was read:
-    /// the plugin door's `welcome.entries.after` (§4.4). Absent after a `tail` read, or
-    /// where no record with an id was read.
+    /// The id of the newest record such that the driver read every record that the harness
+    /// wrote before it. This is the plugin door's `welcome.entries.after` (§4.4). Absent
+    /// after a `tail` read, or where the driver read no record with an id.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub after: Option<String>,
 }
 
-/// `sessions/fold`: the events of records the harness's plugin sent over its door (§4.4),
-/// folded as `sessions/read` folds the transcript's.
+/// `sessions/fold`: the events of records that the harness's plugin sent over its door
+/// (§4.4). The driver folds them as `sessions/read` folds the records of the transcript.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Fold {
     /// The conversation.
     pub external_id: String,
-    /// One of its sub-agents, folded instead.
+    /// One of its sub-agents, to fold in place of the conversation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sub_agent: Option<String>,
     /// Where the last fold ended; absent: the records start at the conversation's first.
@@ -485,8 +498,8 @@ pub struct Fold {
 pub struct Record {
     /// The harness's id for it.
     pub id: String,
-    /// The record; absent where it is over [`super::door::RECORDS_MAX`]: the driver reads
-    /// it from the transcript by `id`.
+    /// The record. Absent where it is over [`super::door::RECORDS_MAX`]: then the driver
+    /// reads it from the transcript by `id`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<Value>,
 }
@@ -500,7 +513,8 @@ pub struct Folded {
     pub cursor: String,
     /// Each one, in order.
     pub events: Vec<Event>,
-    /// How many of the leading records these events say; the rest come again next fold.
+    /// How many of the first records these events describe. The other records come again
+    /// in the next fold.
     pub consumed: u32,
 }
 
@@ -529,18 +543,18 @@ pub enum Event {
         id: String,
         voice: Voice,
         text: String,
-        /// The harness's key of the message these words are of, where it is not `id`: the
-        /// reply's identity, as a live door frame's `message` names it.
+        /// The harness's key for the message of these words, where it is not `id`. It is the
+        /// identity of the reply, as the `message` of a live door frame names it.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         message: Option<String>,
-        /// The call a `tool` voice's text belongs to.
+        /// The call that the text of a `tool` voice belongs to.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         call: Option<String>,
         /// What a person's words carried.
         #[serde(default)]
         clips: Vec<Clip>,
     },
-    /// The harness took back the newest `turns` person instructions.
+    /// The harness removed the newest `turns` instructions of the person.
     Rollback {
         at: u64,
         turns: u32,
@@ -558,23 +572,23 @@ pub enum Event {
         /// Its last 8 lines.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         tail: Option<String>,
-        /// Version 6: the earlier calls of this conversation whose work this one waited on —
-        /// calls that returned while what they started (a command sent to the background, a
-        /// service, a sub-agent) went on running, which this call waited for, read from or
-        /// polled until it returned — each by its `call_began` id; empty where it waited on
-        /// none, and in an older version.
+        /// Version 6: the earlier calls of this conversation whose work this call waited
+        /// on, each by its `call_began` id. Such a call returned while the work that it
+        /// started continued to run: a command in the background, a service or a sub-agent.
+        /// This call waited for that work, read from it, or polled it until it returned.
+        /// Empty where this call waited on none, and in an older version.
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         waited: Vec<String>,
     },
     Tokens {
         at: u64,
         count: Count,
-        /// The model response counted.
+        /// The model response that this count is for.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         response: Option<String>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         model: Option<String>,
-        /// Every token read, cache reads and writes included.
+        /// Every token that the model read, with cache reads and cache writes.
         input: u64,
         /// Of `input`, read from a cache.
         cached: u64,
@@ -609,13 +623,15 @@ pub enum Event {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         error: Option<String>,
     },
-    /// Every event before it is the parent's history, copied into this conversation.
+    /// Every event before this one is the parent's history, which the fork copied into this
+    /// conversation.
     Fork {
         at: u64,
         parent: String,
     },
-    /// The harness compacted the conversation's context: what came before is in its model's
-    /// context only as the summary that replaced it. Never said of history a fork copied.
+    /// The harness compacted the context of the conversation. The model has the earlier
+    /// history only as the summary that replaced it. The driver never gives this event for
+    /// history that a fork copied.
     Compacted {
         at: u64,
         /// The harness's id for its record of it: stable.
@@ -640,11 +656,11 @@ pub enum Event {
 pub enum TurnState {
     Finished,
     Failed,
-    /// The harness wrote no end and its process is gone, or it was stopped.
+    /// The harness wrote no end and its process is gone, or something stopped it.
     Interrupted,
 }
 
-/// Where a run stands.
+/// The state of a run.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
@@ -655,7 +671,7 @@ pub enum Execution {
     Interrupted,
 }
 
-/// How tokens are counted.
+/// How the harness counts tokens.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
@@ -671,17 +687,20 @@ pub enum Count {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Compactor {
-    /// The harness on its own. `reason` is why, where it records it: `threshold` (the
-    /// context reached the harness's own limit), `overflow` (the model refused a call as
-    /// over its limit), `idle` (it compacts a conversation left idle), else the harness's
-    /// own word.
+    /// The harness on its own. `reason` gives the cause, where the harness records it:
+    ///
+    /// - `threshold`: the context reached the harness's own limit.
+    /// - `overflow`: the model refused a call as over its limit.
+    /// - `idle`: the harness compacts a conversation that stayed idle.
+    /// - any other value: the harness's own word.
     Harness {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         reason: Option<String>,
     },
     /// The conversation's person asked it to (`/compact`).
     Person,
-    /// Steery, through the door's `compact` ask (§4.4), by that ask's `id`.
+    /// Steery, through the `compact` ask of the door (§4.4). `compaction` is the `id` of
+    /// that ask.
     Steery { compaction: String },
 }
 
@@ -694,9 +713,10 @@ pub enum Voice {
     Person,
     /// The agent's answer.
     Agent,
-    /// Its reasoning or progress, where the harness writes it as text.
+    /// The agent's reasoning or progress, where the harness writes it as text.
     Thought,
-    /// The text of a call's result, given after its `call_ended`; a call's input is `call_began.call.input` and is never repeated as words.
+    /// The text of a call's result, after its `call_ended`. The input of a call is in
+    /// `call_began.call.input`, and the driver never repeats it as words.
     Tool,
     /// A harness's summary of earlier history.
     Summary,
@@ -715,7 +735,7 @@ pub enum Clip {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         name: Option<String>,
     },
-    /// Bytes kept in a file here.
+    /// Bytes in a file on this host.
     File {
         path: PathBuf,
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -729,7 +749,7 @@ pub enum Clip {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         name: Option<String>,
     },
-    /// An address the harness passed on.
+    /// An address that the harness gave.
     Link { url: String },
 }
 
@@ -740,9 +760,9 @@ pub enum Clip {
 pub struct Call {
     /// The harness's id for it.
     pub id: String,
-    /// The tool as the harness spells it; an MCP tool as `mcp__<server>__<tool>`.
+    /// The tool, as the harness spells it. An MCP tool is `mcp__<server>__<tool>`.
     pub tool: String,
-    /// Its input as the harness wrote it; `null` where it gave none.
+    /// Its input, as the harness wrote it. `null` where the harness gave none.
     pub input: Value,
     /// What kind of tool it is.
     pub group: Group,
@@ -752,7 +772,7 @@ pub struct Call {
     /// The name of Steery's own tool, where the call is one: `requests_create`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub steery: Option<String>,
-    /// What it puts to the person inside the harness, where it waits on them.
+    /// What it asks the person inside the harness, where it waits for the person.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub asks: Option<Asks>,
     /// The call it runs inside.
@@ -771,7 +791,7 @@ macro_rules! listed {
         $vis enum $name { $($variant),+ }
 
         impl $name {
-            /// Every one, in the order declared.
+            /// Every variant, in the order of declaration.
             pub const ALL: &'static [$name] = &[$($name::$variant),+];
         }
     };
@@ -802,7 +822,7 @@ listed! {
     }
 }
 
-/// What a call puts to the person inside the harness.
+/// What a call asks the person inside the harness.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case", deny_unknown_fields)]
@@ -813,7 +833,7 @@ pub enum Asks {
     Plan(String),
 }
 
-/// A question a call puts to the person.
+/// A question that a call asks the person.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -821,7 +841,7 @@ pub struct Question {
     pub question: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub header: Option<String>,
-    /// More than one option may be chosen.
+    /// The person can choose more than one option.
     pub multiple: bool,
     pub options: Vec<Choice>,
 }
@@ -854,7 +874,7 @@ pub struct Failure {
     /// The harness's own code for it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    /// When the service said it takes requests again.
+    /// When the service takes requests again, as the service said.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub retry_at: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -879,36 +899,36 @@ pub enum FailureKind {
     Other,
 }
 
-/// `hook/read`: what the harness handed its hook.
+/// `hook/read`: what the harness gave its hook.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct HookRead {
     /// The harness's own name for the moment.
     pub event: String,
-    /// The document the harness handed the hook, as it came.
+    /// The document that the harness gave the hook, unchanged.
     pub document: String,
-    /// The hook's variables its entry names.
+    /// The variables of the hook that its entry names.
     #[serde(default)]
     pub env: BTreeMap<String, String>,
 }
 
-/// The moment `hook/read` read.
+/// The moment that `hook/read` read.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct HookMoment {
-    /// The moment; absent: the document is no moment Steery carries.
+    /// The moment. Absent: the document is not a moment that Steery uses.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub moment: Option<Moment>,
 }
 
-/// A moment the harness stopped at.
+/// A moment where the harness stopped.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Moment {
-    /// The hook event it is.
+    /// The hook event of the moment.
     pub event: String,
     /// The conversation it is in.
     pub external_id: String,
@@ -924,7 +944,7 @@ pub struct Moment {
     /// Its transcript, where the harness keeps it outside its own folders.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub transcript: Option<PathBuf>,
-    /// The call it is at.
+    /// The call of the moment.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub call: Option<Call>,
     /// At an `after_call`: the call succeeded.
@@ -933,10 +953,10 @@ pub struct Moment {
     /// At a `turn_end`: how the turn ended.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub outcome: Option<TurnState>,
-    /// At a `turn_end`: a hook already kept this turn going once.
+    /// At a `turn_end`: a hook already made this turn continue once.
     #[serde(default)]
     pub continued: bool,
-    /// At a `session_end`: the person left at the prompt.
+    /// At a `session_end`: the person exited at the prompt.
     #[serde(default)]
     pub person_exited: bool,
     /// At a `prompt`: the instruction.
@@ -945,18 +965,19 @@ pub struct Moment {
     /// The share of the context window left, 0 to 1.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub context_left: Option<f64>,
-    /// The model it runs on now, where the moment says: state, never an event.
+    /// The model that the conversation runs on now, where the moment gives it. This is
+    /// state, never an event.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
-    /// How hard it thinks now, in the harness's own word, where the moment says: state,
-    /// never an event.
+    /// The thinking level now, in the harness's own word, where the moment gives it. This
+    /// is state, never an event.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thinking: Option<String>,
-    /// At a `turn_end` whose `outcome` is `failed`: why, where the harness says.
+    /// At a `turn_end` whose `outcome` is `failed`: the cause, where the harness gives it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub failure: Option<Failure>,
     /// At a `permission`: the harness's own ways to allow such calls from now on, in its
-    /// order; `always: {suggestion: n}` is the n-th.
+    /// order. `always: {suggestion: n}` is the n-th.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub suggestions: Vec<Suggestion>,
 }
@@ -968,7 +989,7 @@ pub struct Moment {
 pub struct Suggestion {
     /// What a person reads for it: `Always Bash(cargo check:*)`.
     pub label: String,
-    /// One line on how far it reaches: `this project, for you`.
+    /// One line about its scope: `this project, for you`.
     pub about: String,
 }
 
@@ -981,16 +1002,16 @@ pub struct SessionRef {
     pub external_id: String,
 }
 
-/// `hook/answer`: what the hook prints back for an answer.
+/// `hook/answer`: what the hook prints for an answer.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct HookAnswer {
     /// The harness's own name for the moment.
     pub event: String,
-    /// The document the harness handed the hook, as it came.
+    /// The document that the harness gave the hook, unchanged.
     pub document: String,
-    /// The hook's variables its entry names.
+    /// The variables of the hook that its entry names.
     #[serde(default)]
     pub env: BTreeMap<String, String>,
     /// What the runtime decided.
@@ -1005,15 +1026,15 @@ pub struct Answer {
     /// A paragraph for the agent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub say: Option<String>,
-    /// Let the call go, or block it.
+    /// Allow the call, or block it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub decision: Option<Decision>,
-    /// The `STEERY_LEAD` value the conversation's later processes inherit.
+    /// The `STEERY_LEAD` value that later processes of the conversation inherit.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lead: Option<String>,
 }
 
-/// Let a call go, or block it.
+/// Allow a call, or block it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case", deny_unknown_fields)]
@@ -1044,7 +1065,7 @@ pub enum Always {
     Everything,
 }
 
-/// What the hook prints back.
+/// What the hook prints.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1053,12 +1074,12 @@ pub struct HookAnswered {
     pub stdout: String,
     /// Its exit code.
     pub exit_code: i32,
-    /// A line the hook adds to a file the harness named for it.
+    /// A line that the hook adds to a file that the harness named for it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub append: Option<Append>,
 }
 
-/// A line a hook adds to a file.
+/// A line that a hook adds to a file.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1079,7 +1100,8 @@ pub struct Held {
     pub external_id: String,
 }
 
-/// What `held` answers: who holds the conversation, or where the runtime looks to find out.
+/// What `held` answers: who holds the conversation, or where the runtime looks for the
+/// holder.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(untagged)]
@@ -1105,11 +1127,11 @@ pub struct Looked {
 pub struct Look {
     /// The conversation's transcripts.
     pub transcripts: Vec<PathBuf>,
-    /// A process running as the harness that nothing answers for may hold it without
-    /// holding a transcript open.
+    /// A stray process of the harness, which nothing claims, can hold the conversation with
+    /// no transcript open.
     pub strays: bool,
-    /// A process holding or naming the transcripts that one of these matches is
-    /// somewhere the runtime cannot reach, and is never signalled.
+    /// A process that holds or names the transcripts, and that one of these matches, is
+    /// somewhere that the runtime cannot reach. The runtime never signals it.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub beyond: Vec<Beyond>,
 }
@@ -1119,7 +1141,8 @@ pub struct Look {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Beyond {
-    /// An argument exactly equal to this; absent: every process found this way.
+    /// An argument exactly equal to this. Absent: every process that the runtime finds this
+    /// way.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub arg: Option<String>,
     /// What the holder reads, `{"beyond": line}`.
@@ -1133,7 +1156,7 @@ pub struct Beyond {
 pub enum Holder {
     /// Nobody.
     Nobody {
-        /// What proves it: the harness's own registry, or no process writing the transcript.
+        /// The proof: the harness's own registry, or that no process writes the transcript.
         proof: String,
     },
     /// A person's process.
@@ -1141,18 +1164,18 @@ pub enum Holder {
         /// How its live door treats a model pick; absent: it has none.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         door: Option<Door>,
-        /// How it is stopped.
+        /// How the runtime stops it.
         stop: HolderStop,
     },
 }
 
-/// How a holder is stopped.
+/// How the runtime stops a holder.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case", deny_unknown_fields)]
 pub enum HolderStop {
-    /// Only the harness's owner stops it: an opaque token of at most 1024 characters, or
-    /// `null` where the owner runs no turn now.
+    /// Only the harness's owner can stop it. The value is an opaque token of at most 1024
+    /// characters, or `null` where the owner runs no turn now.
     Owner(Option<String>),
     /// This process.
     Process {
@@ -1160,14 +1183,14 @@ pub enum HolderStop {
         process_start: u64,
         /// The driver proved this is the holder.
         certain: bool,
-        /// A few words a person reads after "holds it".
+        /// A few words that a person reads after "holds it".
         how: String,
     },
-    /// Somewhere the runtime cannot reach, said in one line.
+    /// The holder is somewhere that the runtime cannot reach, in one line.
     Beyond(String),
 }
 
-/// The longest an owner token is.
+/// The maximum length of an owner token.
 pub const OWNER_MAX: usize = 1024;
 
 /// How a harness's own live door treats a model pick.
@@ -1186,7 +1209,7 @@ pub enum Door {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum LiveDoor {
-    /// Steery's plugin door: the runtime speaks it directly and applies a pick itself; the
+    /// Steery's plugin door. The runtime uses it directly and applies a pick itself. The
     /// driver answers no live method.
     Plugin,
     /// The harness's own door, which applies a pick itself.
@@ -1236,31 +1259,31 @@ pub struct Sample {
     pub error: Option<String>,
     /// Nobody is in the conversation at all.
     pub vacant: bool,
-    /// It stands only if no process holds the conversation.
+    /// This sample is true only if no process holds the conversation.
     pub if_unheld: bool,
 }
 
-/// `models`: the models the harness runs here. Its parameters are [`super::Empty`].
+/// `models`: the models that the harness runs here. Its parameters are [`super::Empty`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Models {
-    /// Each one listed, the harness's default first.
+    /// Each listed model, with the harness's default first.
     pub models: Vec<Model>,
-    /// The harness also runs models it does not list.
+    /// The harness also runs models that it does not list.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unlisted: Option<Unlisted>,
-    /// The files whose change changes the list.
+    /// The files that change the list when they change.
     #[serde(default)]
     pub watch: Vec<PathBuf>,
-    /// Whether the harness's own account is signed in here as of this listing, as the
-    /// harness itself says: `true` signed in, `false` not; absent where the driver cannot
-    /// tell.
+    /// Whether the harness's own account is signed in here at the time of this list, as
+    /// the harness says. `true`: signed in. `false`: not signed in. Absent where the driver
+    /// cannot tell.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub signed_in: Option<bool>,
 }
 
-/// What a model a harness does not list takes.
+/// What a model takes when the harness does not list it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1290,8 +1313,9 @@ pub struct Model {
     pub cost: Option<f64>,
 }
 
-/// `mcp/list` (protocol 4): whose MCP servers. Absent `cwd`: the person's own, those every
-/// conversation loads; present: those a conversation started in that folder loads.
+/// `mcp/list` (protocol 4): whose MCP servers to list. Absent `cwd`: the person's own
+/// servers, which every conversation loads. Present: the servers that a conversation loads
+/// when it starts in that folder.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1307,14 +1331,14 @@ pub struct McpList {
 pub struct McpServers {
     /// Each one, by its name in the harness.
     pub servers: Vec<McpServer>,
-    /// False where servers may also come from somewhere the driver cannot read: plugins,
-    /// an account's connectors, configuration an administrator manages.
+    /// False where servers can also come from places that the driver cannot read: plugins,
+    /// the connectors of an account, configuration that an administrator manages.
     pub complete: bool,
-    /// The files whose change changes the list.
+    /// The files that change the list when they change.
     pub watch: Vec<PathBuf>,
 }
 
-/// One MCP server: its name, and for one reached over a URL that URL without its secrets.
+/// One MCP server: its name and, for a server with a URL, that URL without its secrets.
 /// Nothing else of an entry leaves the machine: no command, argument, environment, header,
 /// token or OAuth field.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1328,9 +1352,9 @@ pub struct McpServer {
 }
 
 impl McpServer {
-    /// The server `server`, at `url` as its harness's configuration spells it, if it is
-    /// reached over one: kept to its scheme, host, port and path, and dropped where it
-    /// has no `scheme://`.
+    /// The server `server`, at `url` as the configuration of its harness spells it, if the
+    /// harness reaches it over a URL. The function keeps only the scheme, host, port and
+    /// path of `url`. It drops a `url` that has no `scheme://`.
     pub fn new(server: impl Into<String>, url: Option<&str>) -> Self {
         Self {
             server: server.into(),
@@ -1377,7 +1401,7 @@ fn bare_url(url: &str) -> Option<String> {
 pub struct Start {
     /// What the turn does.
     pub act: Act,
-    /// The conversation continued or forked.
+    /// The conversation that the turn continues or forks.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub external_id: Option<String>,
     /// The folder it runs in.
@@ -1389,10 +1413,10 @@ pub struct Start {
     /// The model, as the harness spells it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
-    /// How hard it thinks, in the harness's own word.
+    /// The thinking level, in the harness's own word.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thinking: Option<String>,
-    /// Folders outside `cwd` the turn reads.
+    /// Folders outside `cwd` that the turn reads.
     #[serde(default)]
     pub reads: Vec<PathBuf>,
 }
@@ -1426,25 +1450,25 @@ pub enum Stdin {
     /// Nothing.
     None,
     /// Nothing, and no end: the process takes its words through its live door and runs
-    /// until stopped.
+    /// until something stops it.
     Held,
 }
 
 /// What a turn's `inbox` answers when the harness took more words.
 pub const HEARD: &str = "heard";
 
-/// `turn/read`: one line a turn's process wrote.
+/// `turn/read`: one line that a turn's process wrote.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct TurnRead {
-    /// The run the line belongs to; a driver may keep state across its lines.
+    /// The run that the line belongs to. A driver can keep state across its lines.
     pub turn: String,
     /// The stream it came on.
     pub stream: Stream,
     /// The line.
     pub line: String,
-    /// The delivery marker's name the runtime put in the words.
+    /// The name of the delivery marker that the runtime put in the words.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub delivery: Option<String>,
 }
@@ -1463,7 +1487,7 @@ pub enum Stream {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct TurnLine {
-    /// The conversation the harness named.
+    /// The conversation that the harness named.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub named: Option<String>,
     /// The harness took the words.
@@ -1472,14 +1496,14 @@ pub struct TurnLine {
     /// How the turn ends, unless a later line says otherwise.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ended: Option<Ended>,
-    /// The refusal word a line of standard error means.
+    /// The refusal word that a line of standard error means.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub refused: Option<String>,
-    /// The events of the named conversation this line says, each under the id
+    /// The events of the named conversation that this line gives. Each has the id that
     /// `sessions/read` gives the same fact.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub events: Vec<Event>,
-    /// The title the harness gave the named conversation.
+    /// The title that the harness gave the named conversation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
 }
@@ -1496,7 +1520,7 @@ pub struct Ended {
     pub error: Option<String>,
 }
 
-/// `stop`: the harness's own way to end a turn; the runtime's signals come after.
+/// `stop`: the harness's own way to end a turn. The runtime's signals come after it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1505,26 +1529,26 @@ pub struct Stop {
     pub external_id: String,
     /// Who holds it, as `held` said.
     pub holder: Holder,
-    /// The `id` of a `say` (version 7): stop only the turn its words began, and refuse
-    /// `other-turn` where the turn running is another. Absent: the person's stop.
+    /// The `id` of a `say` (version 7). Stop only the turn that its words began. Refuse
+    /// `other-turn` where another turn runs. Absent: the person's stop.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub say: Option<String>,
 }
 
-/// What `stop`'s graceful step did.
+/// What the graceful step of `stop` did.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Stopped {
-    /// This step ended the turn. For a `process` holder the runtime signals it after,
-    /// wherever it still runs, whatever this says.
+    /// This step ended the turn. For a `process` holder, the runtime signals the process
+    /// after this step where it still runs, whatever this field says.
     pub stopped: bool,
     /// The driver's one line of evidence: the turn it ended and the state it reached.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub proof: Option<String>,
 }
 
-/// `receipt/mark`: a point in a conversation before words are sent.
+/// `receipt/mark`: a point in a conversation before the runtime sends words.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1542,14 +1566,14 @@ pub struct Marked {
     pub mark: String,
 }
 
-/// `receipt/find`: the input carrying a delivery marker, after a mark.
+/// `receipt/find`: the input that carries a delivery marker, after a mark.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct ReceiptFind {
     /// The conversation.
     pub external_id: String,
-    /// As `receipt/mark` answered.
+    /// The mark that `receipt/mark` gave.
     pub mark: String,
     /// The delivery marker's name.
     pub delivery: String,
@@ -1567,7 +1591,7 @@ pub struct Receipt {
     pub owner: Option<String>,
 }
 
-/// `reader`: a launch plan for a one-shot read.
+/// `reader`: a launch plan for a read that runs once.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1578,19 +1602,20 @@ pub struct Reader {
     /// The model, as the harness spells it; absent: the harness's own.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
-    /// The thinking level, as the driver's `models` spells it for that model; absent: the
-    /// driver's own for a read. One the harness refuses is `selection-unsupported`.
+    /// The thinking level, as the driver's `models` spells it for that model. Absent: the
+    /// driver's own level for a read. A level that the harness refuses gives
+    /// `selection-unsupported`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thinking: Option<String>,
-    /// The tools it may use.
+    /// The tools that it can use.
     pub tools: ReaderTools,
     /// The folder it runs in.
     pub cwd: PathBuf,
-    /// The text read.
+    /// The text that the reader reads.
     pub asked: String,
 }
 
-/// The tools a reader may use.
+/// The tools that a reader can use.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
@@ -1611,16 +1636,16 @@ pub struct ReaderPlan {
     pub env: BTreeMap<String, String>,
     /// The folder it runs in.
     pub cwd: PathBuf,
-    /// `words`: `asked` goes on its standard input.
+    /// `words`: the runtime writes `asked` to its standard input.
     pub stdin: Stdin,
-    /// Files the runtime writes first, relative to `cwd`.
+    /// Files that the runtime writes first, relative to `cwd`.
     #[serde(default)]
     pub files: Vec<ReaderFile>,
-    /// How its output reads.
+    /// How the runtime reads its output.
     pub read: ReadAs,
 }
 
-/// A file a reader's plan writes first.
+/// A file that a reader's plan writes first.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1630,7 +1655,7 @@ pub struct ReaderFile {
     pub content: String,
 }
 
-/// How a reader's output reads.
+/// How the runtime reads a reader's output.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
@@ -1641,7 +1666,7 @@ pub enum ReadAs {
     Events,
 }
 
-/// `reader/read`: a reader's output, read as its answer.
+/// `reader/read`: a reader's output, to read as its answer.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1671,7 +1696,7 @@ pub struct Terminal {
     pub holder: Option<Holder>,
 }
 
-/// The command `terminal` gave.
+/// The command that `terminal` gave.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1698,33 +1723,33 @@ pub struct Say {
     pub external_id: String,
     /// The words.
     pub words: String,
-    /// When they go in.
+    /// When the words go into the conversation.
     pub mode: SayMode,
-    /// The say's name (version 7): the delivery its words carry, else one of the runtime's
-    /// own. The driver names it in `turn.says` of the turn that took the words.
+    /// The name of the say (version 7): the delivery that its words carry, else a name of
+    /// the runtime's own. The driver names it in `turn.says` of the turn that took the words.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
 
-/// When said words go in.
+/// When the words of a `say` go into the conversation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum SayMode {
-    /// Into the turn running.
+    /// Into the running turn.
     Steer,
-    /// After the turn running.
+    /// After the running turn.
     Queue,
     /// Only where nothing runs.
     Immediate,
 }
 
-/// Whether the harness was seen taking said words.
+/// Whether the driver saw the harness take the words.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Said {
-    /// False: handed over unconfirmed.
+    /// False: the driver gave the words but has no confirmation.
     pub took: bool,
 }
 
@@ -1738,12 +1763,12 @@ pub struct Pick {
     /// The model, as the harness spells it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
-    /// How hard it thinks, in the harness's own word.
+    /// The thinking level, in the harness's own word.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thinking: Option<String>,
 }
 
-/// The model and thinking a conversation runs on, as read back.
+/// The model and thinking that a conversation runs on, as the driver read them back.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1754,29 +1779,30 @@ pub struct Picked {
     pub thinking: Option<String>,
 }
 
-/// `recap`: a conversation's own model says where it stands. Its answer is a [`Text`].
+/// `recap`: the conversation's own model describes its state. Its answer is a [`Text`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Recap {
     /// The conversation.
     pub external_id: String,
-    /// What is asked of it.
+    /// What Steery asks the model.
     pub asked: String,
 }
 
-/// `session/changed`: a notification a driver with its own door sends unasked.
+/// `session/changed`: a notification that a driver with its own door sends without a
+/// request.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct SessionChanged {
     /// The conversation.
     pub external_id: String,
-    /// Where it stands now.
+    /// Its state now.
     pub state: LiveState,
 }
 
-/// Where a running conversation stands, as a door says it.
+/// The state of a running conversation, as a door gives it.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1784,48 +1810,48 @@ pub struct LiveState {
     /// A turn runs.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub turn: Option<LiveTurn>,
-    /// The door checked the conversation idle; absent: it cannot say.
+    /// The door found the conversation idle. Absent: it cannot say.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub idle: Option<bool>,
-    /// Words wait to go in.
+    /// Words wait to go into the conversation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pending: Option<bool>,
     /// The person's editor holds text; absent: it cannot say.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub typing: Option<bool>,
-    /// The harness is compacting its context.
+    /// The harness compacts its context now.
     #[serde(default)]
     pub compacting: bool,
     /// The harness waits to retry a request.
     #[serde(default)]
     pub retrying: bool,
-    /// While it waits to retry: the try that failed, as the harness said it. Absent where
-    /// it said nothing of it.
+    /// While it waits to retry: the try that failed, as the harness gave it. Absent where
+    /// the harness said nothing about it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub retry: Option<LiveRetry>,
-    /// Background work running in the process that ends with it: jobs it runs and results
-    /// waiting to be told.
+    /// Background work in the process that ends with the process: jobs that it runs, and
+    /// results that the harness did not yet give the agent.
     #[serde(default, skip_serializing_if = "is_zero")]
     pub jobs: u32,
     /// The model it runs on.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
-    /// How hard it thinks.
+    /// The thinking level.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thinking: Option<String>,
     /// The share of its context window left, 0 to 1.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub context_left: Option<f64>,
-    /// The top-level calls running, oldest first.
+    /// The top-level calls that run now, oldest first.
     #[serde(default)]
     pub calls: Vec<LiveCall>,
-    /// Top-level calls that ended lately, oldest first, at most 64.
+    /// Top-level calls that ended recently, oldest first, at most 64.
     #[serde(default)]
     pub ended: Vec<LiveEnded>,
-    /// The harness's own dialog open in front of the person.
+    /// The harness's own dialog that is open in front of the person.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dialog: Option<Dialog>,
-    /// Turns Steery's words began that ended, at most 16.
+    /// Turns that Steery's words began and that ended, at most 16.
     #[serde(default)]
     pub settled: Vec<LiveSettled>,
 }
@@ -1836,8 +1862,8 @@ fn is_zero(count: &u32) -> bool {
 }
 
 impl LiveState {
-    /// Idle: the door checked it idle, no turn runs, nothing is pending, nobody is
-    /// typing, and it is neither compacting nor retrying.
+    /// Idle: the door found it idle, no turn runs, nothing is pending, nobody types, and
+    /// the harness does not compact or retry.
     pub fn idle(&self) -> bool {
         self.idle == Some(true)
             && self.turn.is_none()
@@ -1848,25 +1874,26 @@ impl LiveState {
     }
 }
 
-/// The turn running.
+/// The running turn.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct LiveTurn {
     pub began_at: u64,
-    /// The ids of `say`s it took as Steery's: a driver's, the `id` each `say` gave.
+    /// The ids of the `say`s that it took as Steery's: for a driver, the `id` that each
+    /// `say` gave.
     #[serde(default)]
     pub says: Vec<String>,
 }
 
-/// The try a harness waits to retry, as it said it.
+/// The try that a harness waits to retry, as it said it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct LiveRetry {
-    /// Which try of the request failed, the first 1.
+    /// Which try of the request failed. The first try is 1.
     pub attempt: u32,
-    /// How many tries it makes before it gives up.
+    /// How many tries it makes before it stops.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub of: Option<u32>,
     /// What went wrong, in the harness's own words: at most 600 characters.
@@ -1874,7 +1901,7 @@ pub struct LiveRetry {
     pub error: Option<String>,
 }
 
-/// A tool call running.
+/// A running tool call.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1885,15 +1912,15 @@ pub struct LiveCall {
     pub tool: String,
     /// When it began.
     pub since: u64,
-    /// Calls running inside it.
+    /// Calls that run inside it.
     #[serde(default)]
     pub children: Vec<LiveChild>,
-    /// The background jobs it waits on that still run, oldest first, at most 8.
+    /// The background jobs that it waits on and that still run, oldest first, at most 8.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub jobs: Vec<LiveJob>,
 }
 
-/// A call running inside another.
+/// A call that runs inside another call.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1902,7 +1929,7 @@ pub struct LiveChild {
     pub tool: String,
 }
 
-/// A background job a call waits on.
+/// A background job that a call waits on.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1950,7 +1977,7 @@ pub enum DialogKind {
     Custom,
 }
 
-/// A turn Steery's words began that ended.
+/// A turn that Steery's words began and that ended.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1959,7 +1986,7 @@ pub struct LiveSettled {
     pub at: u64,
     #[serde(default)]
     pub says: Vec<String>,
-    /// It stopped on an error the harness did not get past.
+    /// It stopped on an error, and the harness did not continue after it.
     #[serde(default)]
     pub failed: bool,
     /// The harness's own line.

@@ -1,6 +1,6 @@
-//! How programs are published (PROTOCOL.md §7): a release is a manifest,
-//! [`FILE`], beside one archive per program and target. The runtime reads only this to add
-//! a program, so whoever publishes one writes exactly this shape.
+//! How a person publishes programs (PROTOCOL.md §7). A release is a manifest, [`FILE`],
+//! beside one archive for each program and target. The runtime reads only this manifest to
+//! add a program. So a publisher must write exactly this shape.
 //!
 //! ```json
 //! {"manifest": 1, "release": "v1.2.0",
@@ -16,13 +16,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::wire::{Kind, ProgramId};
 
-/// The manifest's file name: a release's asset, or any URL's last segment.
+/// The file name of the manifest: the name of a release asset, or the last segment of any URL.
 pub const FILE: &str = "steery-programs.json";
 
-/// The manifest format this crate reads and writes.
+/// The manifest format that this crate reads and writes.
 pub const MANIFEST: u32 = 1;
 
-/// The longest `release`, in characters.
+/// The most characters in `release`.
 pub const RELEASE_MAX: usize = 64;
 
 /// A release of one or more programs.
@@ -32,10 +32,10 @@ pub const RELEASE_MAX: usize = 64;
 pub struct Manifest {
     /// [`MANIFEST`].
     pub manifest: u32,
-    /// The release's name, as its tag reads: letters, digits, `.`, `-`, `_` and `+`, at
-    /// most [`RELEASE_MAX`] characters. Every archive's name carries it.
+    /// The name of the release, the same as its tag: letters, digits, `.`, `-`, `_` and `+`,
+    /// at most [`RELEASE_MAX`] characters. The name of every archive contains it.
     pub release: String,
-    /// Each program of the release, each id once.
+    /// Each program of the release, with each id once.
     pub programs: Vec<Program>,
 }
 
@@ -44,43 +44,50 @@ pub struct Manifest {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Program {
-    /// The id its `initialize` answers.
+    /// The id that its `initialize` answers.
     pub id: ProgramId,
-    /// The kind its `initialize` answers: `harness` for a driver, `machine` for an adapter.
+    /// The kind that its `initialize` answers: `harness` for a driver, `machine` for an adapter.
     pub kind: Kind,
     /// Its build for each target, by Rust target triple: `aarch64-apple-darwin`,
     /// `x86_64-unknown-linux-gnu`. At least one.
     pub files: BTreeMap<String, File>,
 }
 
-/// One build of a program: an archive holding exactly one regular file, the program's
-/// executable ([`executable`]).
+/// One build of a program: an archive that holds exactly one regular file, the executable of
+/// the program ([`executable`]).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct File {
-    /// The archive's file name, exactly [`archive`]'s: it is fetched from the manifest's
-    /// own folder.
+    /// The file name of the archive, exactly as [`archive`] gives it. The runtime fetches the
+    /// archive from the folder of the manifest.
     pub archive: String,
-    /// The archive's SHA-256, 64 lowercase hex digits.
+    /// The SHA-256 of the archive, 64 lowercase hex digits.
     pub sha256: String,
 }
 
 impl Manifest {
-    /// What the shapes cannot say themselves: the format, a release name that is safe in a
-    /// file name, each id once, at least one build each, every target a triple, every
-    /// archive named for its program, release and target, and every digest 64 lowercase
-    /// hex. The first rule broken, in one line.
+    /// Check the rules that the shapes cannot express:
+    ///
+    /// - the format
+    /// - a release name that is safe in a file name
+    /// - each id once
+    /// - at least one build for each program
+    /// - a triple for every target
+    /// - for every archive, the name that its program, release and target give
+    /// - 64 lowercase hex digits in every digest
+    ///
+    /// The error gives the first broken rule, in one line.
     pub fn check(&self) -> Result<(), String> {
         if self.manifest != MANIFEST {
             return Err(format!(
-                "is manifest format {}, and this reads {MANIFEST}",
+                "has manifest format {}, but this crate reads format {MANIFEST}",
                 self.manifest
             ));
         }
         if !release_name(&self.release) {
             return Err(format!(
-                "names the release {:?}: one of letters, digits, `.`, `-`, `_` and `+`, at most {RELEASE_MAX}, is wanted",
+                "names the release {:?}. A release name must have only letters, digits, `.`, `-`, `_` and `+`, at most {RELEASE_MAX} characters",
                 self.release
             ));
         }
@@ -97,12 +104,12 @@ impl Manifest {
             }
             for (target, file) in &program.files {
                 if !triple(target) {
-                    return Err(format!("names {target:?}, which is no target triple"));
+                    return Err(format!("names {target:?}, which is not a target triple"));
                 }
                 let named = archive(program.kind, &program.id, &self.release, target);
                 if file.archive != named {
                     return Err(format!(
-                        "names {:?} for {} on {target}, and {named:?} is its name",
+                        "names {:?} for {} on {target}, but the name of that archive must be {named:?}",
                         file.archive, program.id
                     ));
                 }
@@ -128,7 +135,7 @@ impl Manifest {
     }
 }
 
-/// The executable a program's archive holds: `steery-driver-<id>` for a driver,
+/// The executable that the archive of a program holds: `steery-driver-<id>` for a driver,
 /// `steery-adapter-<id>` for an adapter.
 pub fn executable(kind: Kind, id: &ProgramId) -> String {
     format!("steery-{}-{id}", noun(kind))
@@ -142,14 +149,14 @@ pub fn noun(kind: Kind) -> &'static str {
     }
 }
 
-/// The name of the archive of `id`'s build for `target` in `release`:
+/// The name of the archive that holds the build of `id` for `target` in `release`:
 /// `steery-driver-omp-v1.2.0-aarch64-apple-darwin.tar.gz`.
 pub fn archive(kind: Kind, id: &ProgramId, release: &str, target: &str) -> String {
     format!("{}-{release}-{target}.tar.gz", executable(kind, id))
 }
 
-/// The target triple of a system `os` on `arch`, as Rust names both, where programs are
-/// published for it: `aarch64-apple-darwin`, `x86_64-unknown-linux-gnu`.
+/// The target triple of a system `os` on `arch`, as Rust names both: `aarch64-apple-darwin`,
+/// `x86_64-unknown-linux-gnu`. `None` for a system with no published programs.
 pub fn target(os: &str, arch: &str) -> Option<String> {
     match (os, arch) {
         ("macos", "aarch64" | "x86_64") => Some(format!("{arch}-apple-darwin")),

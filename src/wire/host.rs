@@ -1,5 +1,5 @@
-//! The host protocol (PROTOCOL.md §6): control's channel to `steery host serve`, a remote
-//! host. Control sends requests; `serve` answers them and sends notifications.
+//! The host protocol (PROTOCOL.md §6): the channel from control to `steery host serve` on a
+//! remote host. Control sends requests. `serve` answers them and sends notifications.
 
 use std::path::PathBuf;
 
@@ -8,11 +8,11 @@ use serde_json::Value;
 
 use super::{Initialized, Runtime};
 
-/// The most bytes of one connection sent and not yet credited.
+/// The most bytes of one connection that one side sent and the receiver did not credit yet.
 pub const WINDOW: u64 = 256 << 10;
-/// The most bytes one `host/data` carries.
+/// The most bytes in one `host/data`.
 pub const CHUNK: usize = 64 << 10;
-/// The most bytes one `host/fs/read` answers.
+/// The most bytes in one `host/fs/read` answer.
 pub const READ_MAX: u64 = 4 << 20;
 
 /// `host/hello`: the channel's first request.
@@ -30,7 +30,7 @@ pub struct Hello {
     pub runtime: Runtime,
 }
 
-/// What `serve` is.
+/// The answer to `host/hello`: what `serve` is.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(
     feature = "schema",
@@ -39,9 +39,9 @@ pub struct Hello {
 )]
 #[serde(deny_unknown_fields)]
 pub struct Welcome {
-    /// The one protocol version it speaks, from those offered.
+    /// The one protocol version that `serve` speaks, from the versions that control offered.
     pub protocol: u32,
-    /// Its release.
+    /// The release of `serve`.
     pub release: String,
     /// The operating system it runs on, as Rust names it.
     pub os: String,
@@ -51,10 +51,11 @@ pub struct Welcome {
     pub home: PathBuf,
     /// The host's Steery folder.
     pub steery: PathBuf,
-    /// The port of its loopback listener.
+    /// The port of the loopback listener of `serve`.
     pub port: u16,
-    /// The environment `serve` runs in: what a process control starts there is given, as
-    /// control gives its own to a process it starts on its own computer.
+    /// The environment that `serve` runs in. Control gives this environment to a process
+    /// that it starts on the host. In the same way, control gives its own environment to a
+    /// process that it starts on its own computer.
     #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
     pub env: std::collections::BTreeMap<String, String>,
 }
@@ -72,11 +73,11 @@ pub struct FsStat {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct FsStats {
-    /// `null` where nothing is.
+    /// `null` where nothing is at the path.
     pub stats: Vec<Option<Stat>>,
 }
 
-/// What is at a path. A link is not followed.
+/// What is at a path. `serve` does not follow a link.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -84,7 +85,7 @@ pub struct Stat {
     pub kind: FileKind,
     pub size: u64,
     pub mtime: u64,
-    /// Its Unix mode bits.
+    /// The Unix mode bits.
     pub mode: u32,
     pub dev: u64,
     pub ino: u64,
@@ -102,33 +103,34 @@ pub enum FileKind {
     Other,
 }
 
-/// `host/fs/read`: bytes of a file, within its size as read once.
+/// `host/fs/read`: bytes of a file. `serve` reads the size of the file once and reads only
+/// within that size.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct FsRead {
     pub path: PathBuf,
-    /// From here; absent: 0.
+    /// The byte to start from. Absent: 0.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub offset: Option<u64>,
-    /// At most this many bytes; absent: to the end.
+    /// At most this many bytes. Absent: to the end.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub length: Option<u64>,
-    /// Only the last this many bytes.
+    /// Only this many bytes at the end of the file.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tail: Option<u64>,
 }
 
-/// The bytes `host/fs/read` read.
+/// The bytes that `host/fs/read` read.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct FsBytes {
     /// Base64.
     pub bytes: String,
-    /// The file's size as read.
+    /// The size of the file when `serve` read it.
     pub size: u64,
-    /// The file's modification time as read.
+    /// The modification time of the file when `serve` read it.
     pub mtime: u64,
 }
 
@@ -157,7 +159,7 @@ pub struct FsEntry {
     pub kind: FileKind,
 }
 
-/// `host/fs/write` (replace atomically) and `host/fs/append`.
+/// `host/fs/write` (replaces the file atomically) and `host/fs/append`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -165,11 +167,11 @@ pub struct FsWrite {
     pub path: PathBuf,
     /// Base64.
     pub bytes: String,
-    /// The mode of a file made.
+    /// The mode of a file that the request makes.
     pub mode: u32,
 }
 
-/// `host/fs/mkdir`: a folder and its parents.
+/// `host/fs/mkdir`: make a folder and its parents.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -178,7 +180,8 @@ pub struct FsMkdir {
     pub mode: u32,
 }
 
-/// `host/fs/remove`: a file, or a folder with what it holds where `recursive`.
+/// `host/fs/remove`: remove a file, or, where `recursive` is true, a folder and all that it
+/// holds.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -187,21 +190,21 @@ pub struct FsRemove {
     pub recursive: bool,
 }
 
-/// What `host/programs` answers: the host's programs, as each answered `initialize`, and
-/// why each that does not run cannot be started.
+/// What `host/programs` answers: the programs of the host, each as it answered `initialize`.
+/// For each program that does not run, it also says why `serve` cannot start it.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Programs {
-    /// Its operating-system adapter.
+    /// The operating-system adapter of the host.
     pub os: Initialized,
-    /// Its drivers that run.
+    /// The drivers of the host that run.
     pub drivers: Vec<Initialized>,
-    /// Its drivers that cannot be started, each with why.
+    /// The drivers of the host that `serve` cannot start, each with why.
     pub missing: Vec<Missing>,
 }
 
-/// A program of the host that cannot be started.
+/// A program of the host that `serve` cannot start.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -212,7 +215,7 @@ pub struct Missing {
     pub line: String,
 }
 
-/// `host/call`: a program's method, on the host.
+/// `host/call`: call a method of a program on the host.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(
     feature = "schema",
@@ -240,7 +243,7 @@ pub struct Notified {
     pub params: Value,
 }
 
-/// `host/exited`: a program of the host exited; it starts again on its next call.
+/// `host/exited`: a program of the host exited. It starts again on its next call.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -249,7 +252,7 @@ pub struct Exited {
     pub program: String,
 }
 
-/// `host/opened`: the host's listener took a connection.
+/// `host/opened`: the listener of the host accepted a connection.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -258,7 +261,7 @@ pub struct Opened {
     pub conn: String,
 }
 
-/// `host/dial`: a connection on the host, to a loopback port or a unix socket.
+/// `host/dial`: open a connection on the host to a loopback port or a unix socket.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -271,7 +274,7 @@ pub struct Dial {
     pub socket: Option<PathBuf>,
 }
 
-/// `host/data`: a connection's bytes.
+/// `host/data`: the bytes of a connection.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(
     feature = "schema",
@@ -285,7 +288,7 @@ pub struct Data {
     pub bytes: String,
 }
 
-/// `host/credit`: bytes of a connection passed on.
+/// `host/credit`: the receiver passed on this many bytes of a connection.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -294,7 +297,7 @@ pub struct Credit {
     pub credit: u64,
 }
 
-/// `host/close`: a connection's side ends.
+/// `host/close`: one side of a connection ends.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(
     feature = "schema",
@@ -307,13 +310,13 @@ pub struct Close {
     pub how: CloseHow,
 }
 
-/// How a connection's side ends.
+/// How one side of a connection ends.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum CloseHow {
-    /// That side's writing ends; the other may still send.
+    /// That side stops writing. The other side can still send.
     Write,
-    /// The connection ends at once both ways.
+    /// The connection ends at once in both directions.
     Reset,
 }

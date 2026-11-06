@@ -1,10 +1,10 @@
 # Steery SDK
 
-Steery connects your agent harness and your machines to your phone: your agents ask, you
-answer, and Steery carries the words. Steery's runtime (`steery`) reaches each harness
-through a **driver** and each kind of machine through an **adapter**: small programs that
-speak one protocol on their standard input and output. This repository is that protocol
-and the means to write one.
+Steery connects your agent harness and your machines to your phone. Your agents ask, you
+answer, and Steery sends the words. Steery's runtime (`steery`) uses a **driver** to reach
+each harness and an **adapter** to reach each kind of machine. Drivers and adapters are small
+programs. Each program speaks one protocol on its standard input and output. This repository
+holds that protocol and the tools to write a program.
 
 | | |
 |---|---|
@@ -14,43 +14,48 @@ and the means to write one.
 | [examples/driver](examples/driver) | The smallest driver. |
 | [examples/adapter](examples/adapter) | The smallest adapter that makes hosts. |
 
-Steery's own programs are written the same way, and are the fullest examples:
-[steery-dev/drivers](https://github.com/steery-dev/drivers) (omp, pi, Claude Code,
-Codex) and [steery-dev/adapters](https://github.com/steery-dev/adapters) (macOS, Linux,
-and the cloud vendors' adapters, Daytona's among them). Steery treats them exactly as it
-treats yours.
+Steery's own programs use the same method. They are the most complete examples:
+
+- [steery-dev/drivers](https://github.com/steery-dev/drivers): omp, pi, Claude Code, Codex.
+- [steery-dev/adapters](https://github.com/steery-dev/adapters): macOS, Linux, and the
+  adapters of the cloud vendors, for example Daytona.
+
+Steery uses them exactly as it uses your programs.
 
 ## The rules
 
-- A program is one Rust executable per target, named `steery-driver-<id>` or
-  `steery-adapter-<id>`. The runtime never builds code; it runs what you publish.
-- A program states facts and does what it is asked. It never talks to Steery's server,
-  never holds a key, and changes nothing in a harness but what its `setup/plan` lists.
-- Everything a person sees of your program comes from its `initialize`: `label`, `short`,
-  `tint` and `mark`. Nothing in Steery names it.
+- A program is one Rust executable for each target, with the name `steery-driver-<id>` or
+  `steery-adapter-<id>`. The runtime does not build code. It runs what you publish.
+- A program states facts and does what the runtime asks. It does not speak to Steery's
+  server and does not hold a key. It changes only the items in a harness that its
+  `setup/plan` lists.
+- All that a person sees of your program comes from its `initialize`: `label`, `short`,
+  `tint` and `mark`. No other part of Steery names it.
 
 ## Writing a driver
 
-1. Copy [examples/driver](examples/driver) into a repository of your own, and name the
-   SDK by git instead of by path:
+1. Copy [examples/driver](examples/driver) into your own repository. Name the SDK by git,
+   not by path:
 
    ```toml
    steery-sdk = { git = "https://github.com/steery-dev/sdk", tag = "v9.0.0" }
    ```
 
-2. Change the id, label and facts in `initialize` to your harness's (PROTOCOL.md §3.1),
-   and answer the methods of the levels you declare (§4): `observe` first — `setup/plan`,
-   `sessions/list`, `sessions/locate`, `sessions/read`, `mcp/list`, and your hooks — then
-   `drive` to start and stop turns, then `live` to reach a running conversation.
-3. Check it as you go. Install Steery (`curl -fsSL https://steery.dev/install.sh | sh -s
-   -- --install-only`), then:
+2. In `initialize`, change the id, label and facts to those of your harness (PROTOCOL.md §3.1).
+3. Answer the methods of each level that you declare (§4):
+   1. `observe`: `setup/plan`, `sessions/list`, `sessions/locate`, `sessions/read`,
+      `mcp/list`, and your hooks.
+   2. `drive`: start and stop turns.
+   3. `live`: reach a conversation that runs.
+4. Test the driver after each change. Install Steery
+   (`curl -fsSL https://steery.dev/install.sh | sh -s -- --install-only`), then:
 
    ```sh
    cargo build --release
    steery programs test target/release/steery-driver-<id>
    ```
 
-4. Use it on your own computer without publishing anything:
+5. Use the driver on your own computer. You do not have to publish it:
 
    ```sh
    steery programs add target/release/steery-driver-<id>
@@ -58,10 +63,10 @@ treats yours.
 
 ## Writing an adapter
 
-The same, from [examples/adapter](examples/adapter): an adapter that makes hosts answers
-PROTOCOL.md §5.2 (`hosts/list`, `hosts/ensure`, `start`, `stop`, `delete`, `channel`) over
-your vendor's own API; an operating system answers §5.1. A computer whose work runs in
-your adapter's hosts is then:
+Use the same steps, but start from [examples/adapter](examples/adapter). An adapter that
+makes hosts answers PROTOCOL.md §5.2 (`hosts/list`, `hosts/ensure`, `start`, `stop`,
+`delete`, `channel`) through the API of your vendor. An adapter for an operating system
+answers §5.1. To run the work of a computer in the hosts of your adapter, use:
 
 ```sh
 steery programs add <your release>
@@ -70,8 +75,8 @@ steery setup --adapter <id> --setting YOUR_API_KEY
 
 ## Publishing
 
-A release is one manifest, `steery-programs.json`, beside one `.tar.gz` per program and
-target (PROTOCOL.md §7.1). Build each target, then let `steery` write the archives and the
+A release is one manifest, `steery-programs.json`, with one `.tar.gz` for each program and
+target (PROTOCOL.md §7.1). Build each target. Then let `steery` write the archives and the
 manifest:
 
 ```sh
@@ -83,14 +88,15 @@ steery programs pack --release v0.1.0 --out dist \
 gh release create v0.1.0 dist/*
 ```
 
-Anyone then adds every program of your latest release, and follows its new ones, with:
+Then any person can add each program of your latest release with this command. Steery also
+adds the new programs of each later release:
 
 ```sh
 steery programs add https://github.com/<you>/<repo>
 ```
 
-A Linux build for `x86_64-unknown-linux-gnu` is what the hosts an adapter makes run:
-publish one, and your driver works in Daytona's hosts and every other cloud vendor's too.
+The hosts that an adapter makes run a Linux build for `x86_64-unknown-linux-gnu`. Publish one.
+Then your driver works in the hosts of Daytona and of every other cloud vendor.
 
 ## Licence
 

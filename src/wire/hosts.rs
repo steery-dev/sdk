@@ -1,5 +1,5 @@
 //! The methods of an adapter that makes hosts (PROTOCOL.md §5.2) and its `stream` channel
-//! (§5.3). A host is named by the adapter's own id for it.
+//! (§5.3). The adapter's own id for a host is the name of the host.
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -15,12 +15,12 @@ use serde::{Deserialize, Serialize};
 )]
 #[serde(deny_unknown_fields)]
 pub struct List {
-    /// Only those carrying every one of these labels.
+    /// Only the hosts that have all of these labels.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub labels: Option<BTreeMap<String, String>>,
 }
 
-/// The hosts `hosts/list` found.
+/// The hosts that `hosts/list` found.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(
     feature = "schema",
@@ -29,7 +29,7 @@ pub struct List {
 )]
 #[serde(deny_unknown_fields)]
 pub struct Listed {
-    /// Each one.
+    /// Each host.
     pub hosts: Vec<Host>,
 }
 
@@ -38,33 +38,33 @@ pub struct Listed {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Host {
-    /// The adapter's id for it.
+    /// The adapter's id for the host.
     pub host: String,
-    /// Its state, in the vendor's own word.
+    /// The state of the host, in the vendor's own word.
     pub state: String,
-    /// Its labels.
+    /// The labels of the host.
     #[serde(default)]
     pub labels: BTreeMap<String, String>,
-    /// When it was made.
+    /// When the vendor made the host.
     pub created_at: u64,
 }
 
-/// `hosts/ensure`: the host for `key`, made where none is.
+/// `hosts/ensure`: the host for `key`. The adapter makes the host where none exists.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Ensure {
-    /// What finds it again.
+    /// The key that finds the host again.
     pub key: String,
-    /// What it is made from; absent: the adapter's default.
+    /// What the adapter makes the host from. Absent: the adapter's default.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<Source>,
-    /// Its labels.
+    /// The labels of the host.
     #[serde(default)]
     pub labels: BTreeMap<String, String>,
 }
 
-/// What a host is made from.
+/// What an adapter makes a host from.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case", deny_unknown_fields)]
@@ -73,8 +73,8 @@ pub enum Source {
     Snapshot(String),
     /// A container image, by reference.
     Image(String),
-    /// A Dockerfile's whole text, which the vendor builds in its owner's account: the same
-    /// bytes, the same build. Only where the adapter's facts say `builds`.
+    /// The whole text of a Dockerfile. The vendor builds it in its owner's account. The same
+    /// bytes give the same build. Only where the adapter's facts say `builds`.
     Dockerfile(String),
 }
 
@@ -100,25 +100,26 @@ pub struct State {
     pub state: String,
 }
 
-/// `hosts/expose`: a way for every other host of the adapter to one port of a host.
+/// `hosts/expose`: a URL that every other host of the adapter can use to reach one port of a
+/// host.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Expose {
     /// The adapter's id for the host.
     pub host: String,
-    /// The port inside it.
+    /// The port inside the host.
     pub port: u16,
 }
 
-/// The way `hosts/expose` answers: the same while the host lives.
+/// What `hosts/expose` answers. It stays the same while the host lives.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Exposed {
     /// The URL that reaches the port.
     pub url: String,
-    /// The headers a request to `url` carries.
+    /// The headers to send with each request to `url`.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub headers: BTreeMap<String, String>,
 }
@@ -130,15 +131,15 @@ pub struct Exposed {
 pub struct Put {
     /// The adapter's id for the host.
     pub host: String,
-    /// The absolute file inside it.
+    /// The absolute path of the file inside the host.
     pub path: PathBuf,
-    /// Its whole content, base64.
+    /// The whole content of the file, base64.
     pub content: String,
-    /// Its Unix mode bits.
+    /// The Unix mode bits of the file.
     pub mode: u32,
 }
 
-/// `hosts/channel`: a local way to `command`'s standard input and output in a host.
+/// `hosts/channel`: a local channel to the standard input and output of `command` in a host.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(
     feature = "schema",
@@ -149,7 +150,7 @@ pub struct Put {
 pub struct Channel {
     /// The adapter's id for the host.
     pub host: String,
-    /// The command inside it, its program first.
+    /// The command inside the host, with its program first.
     pub command: Vec<String>,
 }
 
@@ -161,15 +162,15 @@ pub enum Reach {
     /// A local command whose standard input and output are the channel.
     Argv {
         argv: Vec<String>,
-        /// The variables it adds to the environment.
+        /// The variables to add to the environment of the command.
         #[serde(default)]
         env: BTreeMap<String, String>,
     },
-    /// Bytes the adapter carries itself, as `stream/*` messages under this id.
+    /// The adapter carries the bytes itself, as `stream/*` messages with this id.
     Stream { stream: String },
 }
 
-/// `stream/write`: the runtime's bytes for a channel.
+/// `stream/write`: the bytes that the runtime sends to a channel.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -189,7 +190,7 @@ pub struct StreamClose {
     pub stream: String,
 }
 
-/// `stream/data`: the command's bytes, as the adapter sends them.
+/// `stream/data`: the bytes of the command, which the adapter sends.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -200,7 +201,7 @@ pub struct StreamData {
     pub bytes: String,
 }
 
-/// `stream/closed`: a channel ended, as the adapter says.
+/// `stream/closed`: the adapter says that a channel ended.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]

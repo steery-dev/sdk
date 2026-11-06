@@ -1,12 +1,16 @@
 //! Steery's program protocol ([PROTOCOL.md](https://github.com/steery-dev/sdk/blob/main/PROTOCOL.md)):
-//! the one contract between Steery's runtime and every driver and adapter.
+//! the one contract between Steery's runtime and each driver and adapter.
 //!
-//! A program is a child process speaking JSON-RPC 2.0 on its standard input and output,
-//! one JSON object per line. [`serve`] is that loop for a program written in Rust: it
-//! answers `initialize` and `shutdown`, keeps the answers to the last 256 ids, and hands
-//! every other method to a [`Program`]. [`client::Client`] is the runtime's side. [`wire`]
-//! holds every shape either side reads, [`refusal`] the only words a program refuses
-//! with, and [`release`] the manifest a release of programs is published by.
+//! A program is a child process. It speaks JSON-RPC 2.0 on its standard input and output,
+//! one JSON object on each line. [`serve`] is that loop for a program in Rust:
+//!
+//! - It answers `initialize` and `shutdown`.
+//! - It keeps the answers to the last 256 ids.
+//! - It gives each other method to a [`Program`].
+//!
+//! [`client::Client`] is the side of the runtime. [`wire`] holds each shape that the two
+//! sides read. [`refusal`] holds the only words that a program can refuse with. [`release`]
+//! holds the manifest that publishes a release of programs.
 
 pub mod client;
 mod frame;
@@ -22,27 +26,32 @@ use serde_json::{Value, json};
 use tokio::io::{AsyncWriteExt, BufReader};
 use tokio::sync::mpsc;
 
-/// Every protocol version this crate speaks, oldest first: 4 is 3 with `mcp/list`, 5 is 4
-/// with needs (`setup/plan`'s `needs`, `needs/give`), 6 is 5 with `call_ended`'s `waited`,
-/// 7 is 6 with say ids (`say`'s `id`, `stop`'s `say`), 8 is 7 with `identity.call_meta`, 9
-/// is 8 with a harness's `lines` and `hosted` (PROTOCOL.md §10). A program answers the
-/// newest of these the runtime offers.
+/// Each protocol version that this crate speaks, oldest first (PROTOCOL.md §10):
+///
+/// - 4 is 3 with `mcp/list`.
+/// - 5 is 4 with needs (`setup/plan`'s `needs`, `needs/give`).
+/// - 6 is 5 with `call_ended`'s `waited`.
+/// - 7 is 6 with say ids (`say`'s `id`, `stop`'s `say`).
+/// - 8 is 7 with `identity.call_meta`.
+/// - 9 is 8 with a harness's `lines` and `hosted`.
+///
+/// A program answers with the newest of these that the runtime offers.
 pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7, 8, 9];
 
-/// The first version whose `say` carries an `id` and whose `stop` may name one
-/// (PROTOCOL.md §4.2, §4.3): the runtime gives neither to a program that picked an older one.
+/// The first version in which `say` has an `id` and `stop` can name one (PROTOCOL.md §4.2,
+/// §4.3). The runtime gives neither to a program that picked an older version.
 pub const SAY_IDS: u32 = 7;
 
-/// The first version whose `identity` may carry `call_meta` (PROTOCOL.md §3.3): a driver
-/// that picked an older one says none.
+/// The first version in which `identity` can have `call_meta` (PROTOCOL.md §3.3). A driver
+/// that picked an older version gives no `call_meta`.
 pub const CALL_META: u32 = 8;
 
-/// The first version whose harness may say `lines` and `hosted` (PROTOCOL.md §3.1): a
-/// driver that picked an older one says neither.
+/// The first version in which a harness can give `lines` and `hosted` (PROTOCOL.md §3.1).
+/// A driver that picked an older version gives neither.
 pub const LINES_HOSTED: u32 = 9;
 
-/// The version a program answers `initialize` with: the newest of [`PROTOCOLS`] in
-/// `offered`, or none where the runtime offers none of them.
+/// The version that a program answers `initialize` with: the newest of [`PROTOCOLS`] in
+/// `offered`. None when the runtime offers none of them.
 pub fn pick(offered: &[u32]) -> Option<u32> {
     PROTOCOLS
         .iter()
@@ -51,44 +60,44 @@ pub fn pick(offered: &[u32]) -> Option<u32> {
         .find(|version| offered.contains(version))
 }
 
-/// The words a program refuses with (PROTOCOL.md §8). The runtime and the server own what
-/// each one means; an unknown word reaches the person.
+/// The words that a program refuses with (PROTOCOL.md §8). The runtime and the server
+/// decide what each word means. An unknown word goes to the person.
 pub mod refusal {
     /// A live writer is in the conversation.
     pub const HARNESS_BUSY: &str = "harness-busy";
-    /// The harness's store has no such conversation.
+    /// The store of the harness has no conversation with this id.
     pub const NOT_FOUND: &str = "not-found";
-    /// The folder the conversation ran in is gone.
+    /// The folder that the conversation ran in does not exist now.
     pub const NO_PLACE: &str = "no-place";
-    /// A door took no connection, or not the whole line, in time.
+    /// A door did not accept a connection, or the whole line, in time.
     pub const NO_DOOR: &str = "no-door";
-    /// The door took the words and said nothing back.
+    /// The door accepted the words and did not send an answer.
     pub const NO_ANSWER: &str = "no-answer";
-    /// The harness cannot apply a model or thinking pick.
+    /// The harness cannot apply a pick of model or thinking.
     pub const SELECTION_UNSUPPORTED: &str = "selection-unsupported";
-    /// A picked model is not on the harness's list here.
+    /// A picked model is not on the list of the harness on this machine.
     pub const MODEL_MISSING: &str = "model-missing";
-    /// A writer the runtime did not start is in the conversation, and it has no door.
+    /// A writer that the runtime did not start is in the conversation, and it has no door.
     pub const HELD: &str = "held";
-    /// The machine is out of reach.
+    /// The machine cannot be reached.
     pub const OFFLINE: &str = "offline";
-    /// The harness refuses a folder its person has not trusted.
+    /// The harness refuses a folder that its person did not trust.
     pub const UNTRUSTED: &str = "untrusted";
     /// The harness is not on the machine.
     pub const NO_BINARY: &str = "no-binary";
-    /// The process would not start, or the harness said something no other word says.
+    /// The process did not start, or the harness said something that no other word covers.
     pub const START_FAILED: &str = "start-failed";
-    /// The turn ended without its harness naming a conversation.
+    /// The turn ended, and its harness did not name a conversation.
     pub const NO_SESSION: &str = "no-session";
-    /// A stop that could not end what ran: something still runs.
+    /// A stop did not end what ran: something still runs.
     pub const NOT_STOPPED: &str = "not-stopped";
-    /// A stop naming a say found a turn running that the say did not begin, or could not
-    /// tell: nothing was stopped.
+    /// A stop named a say, but the turn that runs did not start from that say, or the
+    /// program could not tell. The program stopped nothing.
     pub const OTHER_TURN: &str = "other-turn";
-    /// Anything else.
+    /// Any other reason.
     pub const REFUSED: &str = "refused";
 
-    /// Every word above.
+    /// Each word above.
     pub const ALL: &[&str] = &[
         HARNESS_BUSY,
         NOT_FOUND,
@@ -117,26 +126,26 @@ pub const REFUSED_CODE: i64 = -32001;
 pub const UNKNOWN_CODE: i64 = -32601;
 /// The JSON-RPC error code of parameters the program cannot read.
 pub const INVALID_CODE: i64 = -32602;
-/// The JSON-RPC error code of a message that is no request: not JSON, too long, or sent
+/// The JSON-RPC error code of a message that is not a request: not JSON, too long, or sent
 /// before `initialize`.
 pub const BAD_REQUEST_CODE: i64 = -32600;
 
-/// Why a program does not do what it is asked.
+/// Why a program does not do what the runtime asks.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    /// A refusal: `word` is one of [`refusal`], `line` one line for a person.
+    /// A refusal: `word` is one of [`refusal`], and `line` is one line for a person.
     #[error("refused: {word}")]
     Refused { word: String, line: Option<String> },
     /// The program has no such method.
     #[error("unknown method")]
     Unknown,
-    /// The parameters do not read as the method's.
+    /// The parameters do not match the parameters of the method.
     #[error("invalid: {0}")]
     Invalid(String),
 }
 
 impl Error {
-    /// A refusal with one line for a person; an empty line is none.
+    /// A refusal with one line for a person. An empty line gives no line.
     pub fn refused(word: &'static str, line: impl Into<String>) -> Self {
         let line = line.into();
         Self::Refused {
@@ -165,37 +174,38 @@ impl Error {
     }
 }
 
-/// A method's parameters, read as `T`.
+/// The parameters of a method, read as `T`.
 pub fn params<T: DeserializeOwned>(value: Value) -> Result<T, Error> {
     serde_json::from_value(value).map_err(|e| Error::Invalid(e.to_string()))
 }
 
-/// A method's result, written as JSON.
+/// The result of a method, written as JSON.
 pub fn result<T: Serialize>(value: T) -> Result<Value, Error> {
     serde_json::to_value(value).map_err(|e| Error::Invalid(e.to_string()))
 }
 
-/// Sends a program's notifications to the runtime, in order with its answers.
+/// Sends the notifications of a program to the runtime, in order with its answers.
 #[derive(Clone)]
 pub struct Notifier {
     out: mpsc::UnboundedSender<Option<Vec<u8>>>,
 }
 
 impl Notifier {
-    /// Send `method` with `params`. Dropped once the runtime has closed the program.
+    /// Send `method` with `params`. After the runtime closes the program, the notifier
+    /// drops the message.
     pub fn notify(&self, method: &str, params: Value) {
         let message = json!({ "jsonrpc": "2.0", "method": method, "params": params });
         let _ = self.out.send(Some(frame::encode(&message)));
     }
 }
 
-/// A driver or an adapter: what it is, and what it does when asked.
+/// A driver or an adapter: what it is, and what it does when the runtime asks.
 pub trait Program: Send + Sync + 'static {
-    /// What the program is, for the runtime's `initialize`. It names one of
+    /// What the program is, for the `initialize` of the runtime. It names one version of
     /// `params.protocol`.
     fn initialize(&self, params: &wire::InitializeParams) -> Result<wire::Initialized, Error>;
 
-    /// Any other method. One the program does not have is [`Error::Unknown`].
+    /// Any other method. For a method that the program does not have, give [`Error::Unknown`].
     fn call(
         &self,
         method: &str,
@@ -247,9 +257,9 @@ impl Memo {
     }
 }
 
-/// Serve `make`'s program on standard input and output until `shutdown` or until the
-/// runtime closes standard input. Every call already sent is answered first, and
-/// `shutdown` last.
+/// Serve the program of `make` on standard input and output until `shutdown`, or until the
+/// runtime closes standard input. The loop answers each call that the runtime already sent
+/// first, and `shutdown` last.
 pub async fn serve<P: Program>(make: impl FnOnce(Notifier) -> P) -> std::io::Result<()> {
     let (out, mut lines) = mpsc::unbounded_channel::<Option<Vec<u8>>>();
     let writer = tokio::spawn(async move {
@@ -315,7 +325,7 @@ pub async fn serve<P: Program>(make: impl FnOnce(Notifier) -> P) -> std::io::Res
             break;
         }
         if !initialized && method != method::INITIALIZE {
-            send(bad_request(id, "`initialize` comes first"));
+            send(bad_request(id, "send `initialize` first"));
             continue;
         }
         let key = id.to_string();

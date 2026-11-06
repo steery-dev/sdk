@@ -50,10 +50,10 @@
               "$ref": "#/$defs/Decision"
             }
           ],
-          "description": "Let the call go, or block it."
+          "description": "Allow the call, or block it."
         },
         "lead": {
-          "description": "The `STEERY_LEAD` value the conversation's later processes inherit.",
+          "description": "The `STEERY_LEAD` value that later processes of the conversation inherit.",
           "type": "string"
         },
         "say": {
@@ -65,7 +65,7 @@
     },
     "Append": {
       "additionalProperties": false,
-      "description": "A line a hook adds to a file.",
+      "description": "A line that a hook adds to a file.",
       "properties": {
         "path": {
           "type": "string"
@@ -85,13 +85,13 @@
       "oneOf": [
         {
           "additionalProperties": false,
-          "description": "Words into the conversation; answered with [`DoorSaid`] once the harness holds them,\nand, asked again under the same `id` while it holds them, once it took them.",
+          "description": "Words into the conversation. The copy answers with [`DoorSaid`] when the harness holds\nthe words. When the runtime asks again under the same `id` while the harness holds\nthem, the copy answers when the harness took them.",
           "properties": {
             "id": {
               "type": "string"
             },
             "idle": {
-              "description": "Only where the conversation is idle; else `harness-busy`, nothing handed over.",
+              "description": "Only when the conversation is idle. Else the copy refuses with `harness-busy` and\ngives nothing to the harness.",
               "type": "boolean"
             },
             "mode": {
@@ -102,7 +102,7 @@
               "type": "string"
             },
             "throw": {
-              "description": "One throw's words go in once.",
+              "description": "The words of one throw go in only once.",
               "type": "string"
             },
             "words": {
@@ -120,7 +120,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "A model and thinking; answered with [`super::harness::Picked`].",
+          "description": "A model and thinking. The copy answers with [`super::harness::Picked`].",
           "properties": {
             "id": {
               "type": "string"
@@ -144,7 +144,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Stop the turn running; answered with [`DoorStopped`]. Without `say`, the person's\npause.",
+          "description": "Stop the turn that runs now. The copy answers with [`DoorStopped`]. Without `say`, this\nis the person's pause.",
           "properties": {
             "id": {
               "type": "string"
@@ -165,7 +165,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Force the words of `say`, held by the harness and not yet taken, in now: the turn\nrunning is aborted, its conversation not parked, and the harness takes them as its\nnext input; words it let go with the abort are handed again, once. Answered with\n[`DoorStopped`].",
+          "description": "Force the words of `say` in now. The harness holds these words and did not take them yet.\n\n1. The copy aborts the turn that runs now. It does not park the conversation.\n2. The harness takes the words as its next input.\n3. The copy gives again, once, the words that the harness let go with the abort.\n\nThe copy answers with [`DoorStopped`].",
           "properties": {
             "id": {
               "type": "string"
@@ -187,7 +187,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Where the conversation stands, in its own model's words; answered with\n[`super::harness::Text`].",
+          "description": "The state of the conversation, in the words of its own model. The copy answers with\n[`super::harness::Text`].",
           "properties": {
             "id": {
               "type": "string"
@@ -205,7 +205,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Forget everything before a cut in favour of `summary`; answered with [`DoorCompacted`].",
+          "description": "Forget everything before a cut, and keep `summary` in its place. The copy answers with\n[`DoorCompacted`].",
           "properties": {
             "before": {
               "format": "uint64",
@@ -240,7 +240,7 @@
       ]
     },
     "Asks": {
-      "description": "What a call puts to the person inside the harness.",
+      "description": "What a call asks the person inside the harness.",
       "oneOf": [
         {
           "additionalProperties": false,
@@ -278,7 +278,7 @@
       "description": "A process the runtime never signals ([`Look::beyond`]).",
       "properties": {
         "arg": {
-          "description": "An argument exactly equal to this; absent: every process found this way.",
+          "description": "An argument exactly equal to this. Absent: every process that the runtime finds this\nway.",
           "type": "string"
         },
         "line": {
@@ -301,7 +301,7 @@
               "$ref": "#/$defs/Asks"
             }
           ],
-          "description": "What it puts to the person inside the harness, where it waits on them."
+          "description": "What it asks the person inside the harness, where it waits for the person."
         },
         "group": {
           "$ref": "#/$defs/Group",
@@ -312,7 +312,7 @@
           "type": "string"
         },
         "input": {
-          "description": "Its input as the harness wrote it; `null` where it gave none."
+          "description": "Its input, as the harness wrote it. `null` where the harness gave none."
         },
         "parent": {
           "description": "The call it runs inside.",
@@ -331,7 +331,7 @@
           "type": "string"
         },
         "tool": {
-          "description": "The tool as the harness spells it; an MCP tool as `mcp__<server>__<tool>`.",
+          "description": "The tool, as the harness spells it. An MCP tool is `mcp__<server>__<tool>`.",
           "type": "string"
         }
       },
@@ -348,11 +348,11 @@
       "description": "Where in an MCP call's `_meta` its harness names whose call it is (§3.3).",
       "properties": {
         "session": {
-          "description": "The key whose value is the conversation's id, the session Steery files the call\nunder; for a sub-agent's call, its lead's.",
+          "description": "The key whose value is the id of the conversation: the session that Steery files the\ncall under. For a call of a sub-agent, this is the id of its lead.",
           "type": "string"
         },
         "sub_agent": {
-          "description": "The key whose value is the id of the sub-agent making the call, where that differs\nfrom the conversation's.",
+          "description": "The key whose value is the id of the sub-agent that makes the call, where that id\ndiffers from the id of the conversation.",
           "type": "string"
         }
       },
@@ -424,7 +424,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Bytes kept in a file here.",
+          "description": "Bytes in a file on this host.",
           "properties": {
             "kind": {
               "const": "file",
@@ -469,7 +469,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "An address the harness passed on.",
+          "description": "An address that the harness gave.",
           "properties": {
             "kind": {
               "const": "link",
@@ -488,16 +488,16 @@
       ]
     },
     "CloseHow": {
-      "description": "How a connection's side ends.",
+      "description": "How one side of a connection ends.",
       "oneOf": [
         {
           "const": "write",
-          "description": "That side's writing ends; the other may still send.",
+          "description": "That side stops writing. The other side can still send.",
           "type": "string"
         },
         {
           "const": "reset",
-          "description": "The connection ends at once both ways.",
+          "description": "The connection ends at once in both directions.",
           "type": "string"
         }
       ]
@@ -507,7 +507,7 @@
       "oneOf": [
         {
           "additionalProperties": false,
-          "description": "The harness on its own. `reason` is why, where it records it: `threshold` (the\ncontext reached the harness's own limit), `overflow` (the model refused a call as\nover its limit), `idle` (it compacts a conversation left idle), else the harness's\nown word.",
+          "description": "The harness on its own. `reason` gives the cause, where the harness records it:\n\n- `threshold`: the context reached the harness's own limit.\n- `overflow`: the model refused a call as over its limit.\n- `idle`: the harness compacts a conversation that stayed idle.\n- any other value: the harness's own word.",
           "properties": {
             "kind": {
               "const": "harness",
@@ -538,7 +538,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Steery, through the door's `compact` ask (§4.4), by that ask's `id`.",
+          "description": "Steery, through the `compact` ask of the door (§4.4). `compaction` is the `id` of\nthat ask.",
           "properties": {
             "compaction": {
               "type": "string"
@@ -557,7 +557,7 @@
       ]
     },
     "Count": {
-      "description": "How tokens are counted.",
+      "description": "How the harness counts tokens.",
       "oneOf": [
         {
           "const": "response",
@@ -573,7 +573,7 @@
     },
     "Credit": {
       "additionalProperties": false,
-      "description": "`host/credit`: bytes of a connection passed on.",
+      "description": "`host/credit`: the receiver passed on this many bytes of a connection.",
       "properties": {
         "conn": {
           "type": "string"
@@ -591,7 +591,7 @@
       "type": "object"
     },
     "Decision": {
-      "description": "Let a call go, or block it.",
+      "description": "Allow a call, or block it.",
       "oneOf": [
         {
           "additionalProperties": false,
@@ -649,7 +649,7 @@
     },
     "Dial": {
       "additionalProperties": false,
-      "description": "`host/dial`: a connection on the host, to a loopback port or a unix socket.",
+      "description": "`host/dial`: open a connection on the host to a loopback port or a unix socket.",
       "properties": {
         "conn": {
           "description": "`c<n>`.",
@@ -724,7 +724,7 @@
       "description": "What a door's compact did.",
       "properties": {
         "forgot": {
-          "description": "Estimated tokens forgotten; 0 where nothing was.",
+          "description": "The estimated count of tokens that the harness forgot. 0 when it forgot nothing.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
@@ -744,10 +744,10 @@
     },
     "DoorEntries": {
       "additionalProperties": false,
-      "description": "Where a welcomed copy starts its `entries` frames.",
+      "description": "Where a copy that the runtime welcomed starts its `entries` frames.",
       "properties": {
         "after": {
-          "description": "The id of the last record the runtime holds; absent: from the first record.",
+          "description": "The id of the last record that the runtime holds. Absent: start from the first record.",
           "type": "string"
         }
       },
@@ -763,7 +763,7 @@
         },
         {
           "const": "rpc",
-          "description": "A program drawing for a person.",
+          "description": "A program that draws for a person.",
           "type": "string"
         },
         {
@@ -780,7 +780,7 @@
     },
     "DoorSaid": {
       "additionalProperties": false,
-      "description": "What a door's say did: when the harness held the words, and when it took them into\nits turn, each milliseconds since 1970 on the harness's clock. `queued_at` without\n`taken_at`: held, not yet taken. Neither: taken, not dated.",
+      "description": "What the say of a door did. `queued_at` is when the harness held the words. `taken_at` is\nwhen the harness took them into its turn. Both are milliseconds since 1970 on the harness's\nclock. `queued_at` without `taken_at`: the harness holds the words and did not take them\nyet. Neither: the harness took the words, and the answer gives no time.",
       "properties": {
         "queued_at": {
           "format": "uint64",
@@ -800,12 +800,12 @@
       "oneOf": [
         {
           "const": "steer",
-          "description": "Into the turn running.",
+          "description": "Into the turn that runs now.",
           "type": "string"
         },
         {
           "const": "queue",
-          "description": "After it.",
+          "description": "After that turn.",
           "type": "string"
         }
       ]
@@ -816,14 +816,14 @@
       "properties": {
         "running": {
           "default": [],
-          "description": "Background jobs still running.",
+          "description": "The background jobs that still run.",
           "items": {
             "type": "string"
           },
           "type": "array"
         },
         "stopped": {
-          "description": "A turn was stopped.",
+          "description": "The copy stopped a turn.",
           "type": "boolean"
         }
       },
@@ -834,7 +834,7 @@
     },
     "Empty": {
       "additionalProperties": false,
-      "description": "The empty object: the parameters of a method that takes none, and the result of one\nthat says nothing.",
+      "description": "The empty object: the parameters of a method that takes none, and the result of a method\nthat says nothing.",
       "type": "object"
     },
     "Ended": {
@@ -857,10 +857,10 @@
     },
     "Ensure": {
       "additionalProperties": false,
-      "description": "`hosts/ensure`: the host for `key`, made where none is.",
+      "description": "`hosts/ensure`: the host for `key`. The adapter makes the host where none exists.",
       "properties": {
         "key": {
-          "description": "What finds it again.",
+          "description": "The key that finds the host again.",
           "type": "string"
         },
         "labels": {
@@ -868,7 +868,7 @@
             "type": "string"
           },
           "default": {},
-          "description": "Its labels.",
+          "description": "The labels of the host.",
           "type": "object"
         },
         "source": {
@@ -877,7 +877,7 @@
               "$ref": "#/$defs/Source"
             }
           ],
-          "description": "What it is made from; absent: the adapter's default."
+          "description": "What the adapter makes the host from. Absent: the adapter's default."
         }
       },
       "required": [
@@ -887,7 +887,7 @@
     },
     "Entry": {
       "additionalProperties": false,
-      "description": "One place in one file the runtime writes, merges byte-exactly, records, and gives back\nwhen the harness is removed.",
+      "description": "One place in one file that the runtime writes. The runtime merges it byte-exactly,\nrecords it, and gives it back when it removes the harness.",
       "properties": {
         "at": {
           "description": "The place in it: a JSON Pointer or a TOML key path; absent: the whole file.",
@@ -902,14 +902,14 @@
         },
         "format": {
           "$ref": "#/$defs/Format",
-          "description": "How the file reads."
+          "description": "The format of the file."
         },
         "path": {
           "description": "The absolute file.",
           "type": "string"
         },
         "value": {
-          "description": "What goes there; a `text` file's is a string."
+          "description": "The value at that place. For a `text` file, the value is a string."
         }
       },
       "required": [
@@ -922,10 +922,10 @@
     },
     "Environ": {
       "additionalProperties": false,
-      "description": "`process/environ`: some of a process's environment.",
+      "description": "`process/environ`: some variables of the environment of a process.",
       "properties": {
         "names": {
-          "description": "The variables read.",
+          "description": "The variables to read.",
           "items": {
             "type": "string"
           },
@@ -938,7 +938,7 @@
           "type": "integer"
         },
         "process_start": {
-          "description": "Its start time, which the pid must still have.",
+          "description": "Its start time. The pid must still have this start time.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
@@ -1019,7 +1019,7 @@
               "type": "integer"
             },
             "call": {
-              "description": "The call a `tool` voice's text belongs to.",
+              "description": "The call that the text of a `tool` voice belongs to.",
               "type": "string"
             },
             "clips": {
@@ -1035,7 +1035,7 @@
               "type": "string"
             },
             "message": {
-              "description": "The harness's key of the message these words are of, where it is not `id`: the\nreply's identity, as a live door frame's `message` names it.",
+              "description": "The harness's key for the message of these words, where it is not `id`. It is the\nidentity of the reply, as the `message` of a live door frame names it.",
               "type": "string"
             },
             "text": {
@@ -1060,7 +1060,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "The harness took back the newest `turns` person instructions.",
+          "description": "The harness removed the newest `turns` instructions of the person.",
           "properties": {
             "at": {
               "format": "uint64",
@@ -1136,7 +1136,7 @@
               "type": "string"
             },
             "waited": {
-              "description": "Version 6: the earlier calls of this conversation whose work this one waited on —\ncalls that returned while what they started (a command sent to the background, a\nservice, a sub-agent) went on running, which this call waited for, read from or\npolled until it returned — each by its `call_began` id; empty where it waited on\nnone, and in an older version.",
+              "description": "Version 6: the earlier calls of this conversation whose work this call waited\non, each by its `call_began` id. Such a call returned while the work that it\nstarted continued to run: a command in the background, a service or a sub-agent.\nThis call waited for that work, read from it, or polled it until it returned.\nEmpty where this call waited on none, and in an older version.",
               "items": {
                 "type": "string"
               },
@@ -1181,7 +1181,7 @@
               "$ref": "#/$defs/Count"
             },
             "input": {
-              "description": "Every token read, cache reads and writes included.",
+              "description": "Every token that the model read, with cache reads and cache writes.",
               "format": "uint64",
               "minimum": 0,
               "type": "integer"
@@ -1201,7 +1201,7 @@
               "type": "integer"
             },
             "response": {
-              "description": "The model response counted.",
+              "description": "The model response that this count is for.",
               "type": "string"
             },
             "type": {
@@ -1290,7 +1290,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Every event before it is the parent's history, copied into this conversation.",
+          "description": "Every event before this one is the parent's history, which the fork copied into this\nconversation.",
           "properties": {
             "at": {
               "format": "uint64",
@@ -1314,7 +1314,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "The harness compacted the conversation's context: what came before is in its model's\ncontext only as the summary that replaced it. Never said of history a fork copied.",
+          "description": "The harness compacted the context of the conversation. The model has the earlier\nhistory only as the summary that replaced it. The driver never gives this event for\nhistory that a fork copied.",
           "properties": {
             "at": {
               "format": "uint64",
@@ -1361,11 +1361,11 @@
       "description": "The events `sessions/read` read.",
       "properties": {
         "after": {
-          "description": "The id of the newest record such that every record written before it was read:\nthe plugin door's `welcome.entries.after` (§4.4). Absent after a `tail` read, or\nwhere no record with an id was read.",
+          "description": "The id of the newest record such that the driver read every record that the harness\nwrote before it. This is the plugin door's `welcome.entries.after` (§4.4). Absent\nafter a `tail` read, or where the driver read no record with an id.",
           "type": "string"
         },
         "cursor": {
-          "description": "Where this read ended, for the next: opaque, between whole records.",
+          "description": "Where this read ended, for the next read. Opaque, and always between whole records.",
           "type": "string"
         },
         "events": {
@@ -1376,15 +1376,15 @@
           "type": "array"
         },
         "more": {
-          "description": "Events remain past this answer.",
+          "description": "More events remain after this answer.",
           "type": "boolean"
         },
         "reset": {
-          "description": "The transcript was rewritten: these start again from the beginning.",
+          "description": "The harness rewrote the transcript: these events start again from the beginning.",
           "type": "boolean"
         },
         "whole": {
-          "description": "These start at the conversation's beginning.",
+          "description": "These events start at the conversation's beginning.",
           "type": "boolean"
         }
       },
@@ -1398,7 +1398,7 @@
       "type": "object"
     },
     "Execution": {
-      "description": "Where a run stands.",
+      "description": "The state of a run.",
       "enum": [
         "running",
         "finished",
@@ -1409,7 +1409,7 @@
     },
     "Exited": {
       "additionalProperties": false,
-      "description": "`host/exited`: a program of the host exited; it starts again on its next call.",
+      "description": "`host/exited`: a program of the host exited. It starts again on its next call.",
       "properties": {
         "program": {
           "description": "`os`, or a driver's id.",
@@ -1423,14 +1423,14 @@
     },
     "Expose": {
       "additionalProperties": false,
-      "description": "`hosts/expose`: a way for every other host of the adapter to one port of a host.",
+      "description": "`hosts/expose`: a URL that every other host of the adapter can use to reach one port of a\nhost.",
       "properties": {
         "host": {
           "description": "The adapter's id for the host.",
           "type": "string"
         },
         "port": {
-          "description": "The port inside it.",
+          "description": "The port inside the host.",
           "format": "uint16",
           "maximum": 65535,
           "minimum": 0,
@@ -1445,13 +1445,13 @@
     },
     "Exposed": {
       "additionalProperties": false,
-      "description": "The way `hosts/expose` answers: the same while the host lives.",
+      "description": "What `hosts/expose` answers. It stays the same while the host lives.",
       "properties": {
         "headers": {
           "additionalProperties": {
             "type": "string"
           },
-          "description": "The headers a request to `url` carries.",
+          "description": "The headers to send with each request to `url`.",
           "type": "object"
         },
         "url": {
@@ -1493,7 +1493,7 @@
           "type": "string"
         },
         "retry_at": {
-          "description": "When the service said it takes requests again.",
+          "description": "When the service takes requests again, as the service said.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
@@ -1556,7 +1556,7 @@
           "type": "string"
         },
         "secret": {
-          "description": "A secret: never shown again once typed.",
+          "description": "A secret: Steery never shows it again after the person types it.",
           "type": "boolean"
         }
       },
@@ -1568,14 +1568,14 @@
     },
     "File": {
       "additionalProperties": false,
-      "description": "One build of a program: an archive holding exactly one regular file, the program's\nexecutable ([`executable`]).",
+      "description": "One build of a program: an archive that holds exactly one regular file, the executable of\nthe program ([`executable`]).",
       "properties": {
         "archive": {
-          "description": "The archive's file name, exactly [`archive`]'s: it is fetched from the manifest's\nown folder.",
+          "description": "The file name of the archive, exactly as [`archive`] gives it. The runtime fetches the\narchive from the folder of the manifest.",
           "type": "string"
         },
         "sha256": {
-          "description": "The archive's SHA-256, 64 lowercase hex digits.",
+          "description": "The SHA-256 of the archive, 64 lowercase hex digits.",
           "type": "string"
         }
       },
@@ -1614,13 +1614,13 @@
           "type": "integer"
         },
         "process_start": {
-          "description": "Its start time, which the pid must still have.",
+          "description": "Its start time. The pid must still have this start time.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
         },
         "writing": {
-          "description": "Only the files it holds open for writing.",
+          "description": "Only the files that it holds open to write.",
           "type": "boolean"
         }
       },
@@ -1633,7 +1633,7 @@
     },
     "Fold": {
       "additionalProperties": false,
-      "description": "`sessions/fold`: the events of records the harness's plugin sent over its door (§4.4),\nfolded as `sessions/read` folds the transcript's.",
+      "description": "`sessions/fold`: the events of records that the harness's plugin sent over its door\n(§4.4). The driver folds them as `sessions/read` folds the records of the transcript.",
       "properties": {
         "cursor": {
           "description": "Where the last fold ended; absent: the records start at the conversation's first.",
@@ -1657,7 +1657,7 @@
           "type": "array"
         },
         "sub_agent": {
-          "description": "One of its sub-agents, folded instead.",
+          "description": "One of its sub-agents, to fold in place of the conversation.",
           "type": "string"
         }
       },
@@ -1673,7 +1673,7 @@
       "description": "The events `sessions/fold` folded.",
       "properties": {
         "consumed": {
-          "description": "How many of the leading records these events say; the rest come again next fold.",
+          "description": "How many of the first records these events describe. The other records come again\nin the next fold.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
@@ -1698,7 +1698,7 @@
       "type": "object"
     },
     "Format": {
-      "description": "How a setup file reads.",
+      "description": "The format of a setup file.",
       "enum": [
         "json",
         "toml",
@@ -1711,7 +1711,7 @@
       "description": "An installed harness.",
       "properties": {
         "binary": {
-          "description": "Its binary.",
+          "description": "Its executable.",
           "type": "string"
         },
         "release": {
@@ -1732,20 +1732,20 @@
     },
     "FsBytes": {
       "additionalProperties": false,
-      "description": "The bytes `host/fs/read` read.",
+      "description": "The bytes that `host/fs/read` read.",
       "properties": {
         "bytes": {
           "description": "Base64.",
           "type": "string"
         },
         "mtime": {
-          "description": "The file's modification time as read.",
+          "description": "The modification time of the file when `serve` read it.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
         },
         "size": {
-          "description": "The file's size as read.",
+          "description": "The size of the file when `serve` read it.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
@@ -1806,7 +1806,7 @@
     },
     "FsMkdir": {
       "additionalProperties": false,
-      "description": "`host/fs/mkdir`: a folder and its parents.",
+      "description": "`host/fs/mkdir`: make a folder and its parents.",
       "properties": {
         "mode": {
           "format": "uint32",
@@ -1825,16 +1825,16 @@
     },
     "FsRead": {
       "additionalProperties": false,
-      "description": "`host/fs/read`: bytes of a file, within its size as read once.",
+      "description": "`host/fs/read`: bytes of a file. `serve` reads the size of the file once and reads only\nwithin that size.",
       "properties": {
         "length": {
-          "description": "At most this many bytes; absent: to the end.",
+          "description": "At most this many bytes. Absent: to the end.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
         },
         "offset": {
-          "description": "From here; absent: 0.",
+          "description": "The byte to start from. Absent: 0.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
@@ -1843,7 +1843,7 @@
           "type": "string"
         },
         "tail": {
-          "description": "Only the last this many bytes.",
+          "description": "Only this many bytes at the end of the file.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
@@ -1856,7 +1856,7 @@
     },
     "FsRemove": {
       "additionalProperties": false,
-      "description": "`host/fs/remove`: a file, or a folder with what it holds where `recursive`.",
+      "description": "`host/fs/remove`: remove a file, or, where `recursive` is true, a folder and all that it\nholds.",
       "properties": {
         "path": {
           "type": "string"
@@ -1892,7 +1892,7 @@
       "description": "What `host/fs/stat` found, in order.",
       "properties": {
         "stats": {
-          "description": "`null` where nothing is.",
+          "description": "`null` where nothing is at the path.",
           "items": {
             "anyOf": [
               {
@@ -1913,14 +1913,14 @@
     },
     "FsWrite": {
       "additionalProperties": false,
-      "description": "`host/fs/write` (replace atomically) and `host/fs/append`.",
+      "description": "`host/fs/write` (replaces the file atomically) and `host/fs/append`.",
       "properties": {
         "bytes": {
           "description": "Base64.",
           "type": "string"
         },
         "mode": {
-          "description": "The mode of a file made.",
+          "description": "The mode of a file that the request makes.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
@@ -1949,7 +1949,7 @@
             "type": "string"
           },
           "default": {},
-          "description": "Each of the way's fields its person filled, by name.",
+          "description": "Each field of the way that the person filled, by name.",
           "type": "object"
         },
         "way": {
@@ -1964,7 +1964,7 @@
       "type": "object"
     },
     "Given": {
-      "description": "What came of a [`Give`].",
+      "description": "The result of a [`Give`].",
       "oneOf": [
         {
           "additionalProperties": false,
@@ -1977,11 +1977,11 @@
                   "additionalProperties": {
                     "type": "string"
                   },
-                  "description": "Variables the runtime keeps for this harness on this machine, sealed, and adds\nto every process of it on every host from now on; empty where what was given\nstays in this host.",
+                  "description": "Variables that the runtime keeps sealed for this harness on this machine. From\nnow on, the runtime adds them to every process of the harness on every host.\nEmpty where the given values stay in this host.",
                   "type": "object"
                 },
                 "line": {
-                  "description": "What came of it, in one line (`Signed in as ada@example.com`).",
+                  "description": "The result, in one line (`Signed in as ada@example.com`).",
                   "type": "string"
                 }
               },
@@ -1998,7 +1998,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "One more step: this way is asked next (a started sign-in's link and code).",
+          "description": "One more step: Steery asks for this way next (for example, the link and code of a\nsign-in that started).",
           "properties": {
             "next": {
               "$ref": "#/$defs/Way"
@@ -2038,18 +2038,18 @@
       "description": "A driver's facts: what the runtime's holder rule and offers read.",
       "properties": {
         "acts": {
-          "description": "The acts the harness does at all.",
+          "description": "Every act that the harness can do.",
           "items": {
             "$ref": "#/$defs/Act"
           },
           "type": "array"
         },
         "by_file": {
-          "description": "A conversation is continued by its transcript path, not its id.",
+          "description": "A continue names a conversation by its transcript path, not by its id.",
           "type": "boolean"
         },
         "checks_idle": {
-          "description": "The door checks the conversation idle itself as it takes words.",
+          "description": "The door itself checks that the conversation is idle when it takes words.",
           "type": "boolean"
         },
         "door": {
@@ -2058,22 +2058,22 @@
               "$ref": "#/$defs/LiveDoor"
             }
           ],
-          "description": "How a live conversation is reached; absent: there is no live door."
+          "description": "How the runtime reaches a live conversation. Absent: there is no live door."
         },
         "forks_beside": {
-          "description": "A fork may run beside a live writer.",
+          "description": "A fork can run beside a live writer.",
           "type": "boolean"
         },
         "keeps": {
           "$ref": "#/$defs/Keeps",
-          "description": "What a continue keeps without being told."
+          "description": "What a continue keeps without an instruction."
         },
         "resumes_in_place": {
           "description": "A continue runs only in the folder the conversation ran in.",
           "type": "boolean"
         },
         "worktrees": {
-          "description": "`start` makes a new worktree for a fork or a new conversation when asked.",
+          "description": "`start` makes a new worktree for a fork or a new conversation when the call asks for\none.",
           "type": "boolean"
         }
       },
@@ -2098,7 +2098,7 @@
         },
         "hooks": {
           "default": [],
-          "description": "Every moment of the harness the runtime reads.",
+          "description": "Every moment of the harness that the runtime reads.",
           "items": {
             "$ref": "#/$defs/Hook"
           },
@@ -2108,7 +2108,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "The operations of Steery's catalog the harness hosts as tools of its own, each by its\ntool's name: `{\"cards.put\": \"card\"}` (version 9). Steery's skill and hooks name each so,\nand every other as Steery spells it.",
+          "description": "The operations of Steery's catalog that the harness hosts as its own tools, each with\nthe name of its tool: `{\"cards.put\": \"card\"}` (version 9). Steery's skill and hooks\nname each of these operations by its tool name. They name every other operation as\nSteery spells it.",
           "type": "object"
         },
         "identity": {
@@ -2120,7 +2120,7 @@
           "type": "string"
         },
         "levels": {
-          "description": "Its levels; each needs the one before it. `live` is named exactly when\n`facts.door` is.",
+          "description": "Its levels. Each level needs the level before it. The driver names `live` exactly when\nit gives `facts.door`.",
           "items": {
             "$ref": "#/$defs/Level"
           },
@@ -2128,7 +2128,7 @@
         },
         "lines": {
           "$ref": "#/$defs/Lines",
-          "description": "Who writes its sessions' lines (version 9). Absent: the agent, which Steery's skill\nand hooks tell how."
+          "description": "Who writes the lines of its sessions (version 9). Absent: the agent writes them, and\nSteery's skill and hooks tell the agent how."
         },
         "minimum": {
           "allOf": [
@@ -2144,18 +2144,18 @@
               "$ref": "#/$defs/ReaderFacts"
             }
           ],
-          "description": "Its one-shot reader; absent: the driver has none."
+          "description": "Its one-shot reader. Absent: the driver has no reader."
         },
         "setup": {
           "$ref": "#/$defs/SetupFacts",
-          "description": "What setting the harness up and serving its MCP calls read."
+          "description": "The facts for the setup of the harness and for its MCP calls."
         },
         "sign_in": {
           "description": "The action that signs a person in: `run /login`.",
           "type": "string"
         },
         "transcript": {
-          "description": "One line on how its transcript file reads; absent: it keeps no transcript file.",
+          "description": "One line on how to read its transcript file. Absent: the harness keeps no transcript\nfile.",
           "type": "string"
         }
       },
@@ -2193,7 +2193,7 @@
           "description": "The driver knows only where to look."
         }
       ],
-      "description": "What `held` answers: who holds the conversation, or where the runtime looks to find out."
+      "description": "What `held` answers: who holds the conversation, or where the runtime looks for the\nholder."
     },
     "Holder": {
       "description": "Who holds a conversation.",
@@ -2206,7 +2206,7 @@
               "additionalProperties": false,
               "properties": {
                 "proof": {
-                  "description": "What proves it: the harness's own registry, or no process writing the transcript.",
+                  "description": "The proof: the harness's own registry, or that no process writes the transcript.",
                   "type": "string"
                 }
               },
@@ -2238,7 +2238,7 @@
                 },
                 "stop": {
                   "$ref": "#/$defs/HolderStop",
-                  "description": "How it is stopped."
+                  "description": "How the runtime stops it."
                 }
               },
               "required": [
@@ -2255,11 +2255,11 @@
       ]
     },
     "HolderStop": {
-      "description": "How a holder is stopped.",
+      "description": "How the runtime stops a holder.",
       "oneOf": [
         {
           "additionalProperties": false,
-          "description": "Only the harness's owner stops it: an opaque token of at most 1024 characters, or\n`null` where the owner runs no turn now.",
+          "description": "Only the harness's owner can stop it. The value is an opaque token of at most 1024\ncharacters, or `null` where the owner runs no turn now.",
           "properties": {
             "owner": {
               "type": [
@@ -2285,7 +2285,7 @@
                   "type": "boolean"
                 },
                 "how": {
-                  "description": "A few words a person reads after \"holds it\".",
+                  "description": "A few words that a person reads after \"holds it\".",
                   "type": "string"
                 },
                 "pid": {
@@ -2315,7 +2315,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Somewhere the runtime cannot reach, said in one line.",
+          "description": "The holder is somewhere that the runtime cannot reach, in one line.",
           "properties": {
             "beyond": {
               "type": "string"
@@ -2333,7 +2333,7 @@
       "description": "One moment of the harness the runtime reads.",
       "properties": {
         "env": {
-          "description": "Variables of the hook's process the driver reads.",
+          "description": "The variables of the hook's process that the driver reads.",
           "items": {
             "type": "string"
           },
@@ -2360,7 +2360,7 @@
           "description": "How the moment reaches the runtime."
         },
         "waits": {
-          "description": "The seconds the harness gives this hook before it goes on without it.",
+          "description": "The seconds that the harness waits for this hook before it continues without it.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
@@ -2375,14 +2375,14 @@
     },
     "HookAnswer": {
       "additionalProperties": false,
-      "description": "`hook/answer`: what the hook prints back for an answer.",
+      "description": "`hook/answer`: what the hook prints for an answer.",
       "properties": {
         "answer": {
           "$ref": "#/$defs/Answer",
           "description": "What the runtime decided."
         },
         "document": {
-          "description": "The document the harness handed the hook, as it came.",
+          "description": "The document that the harness gave the hook, unchanged.",
           "type": "string"
         },
         "env": {
@@ -2390,7 +2390,7 @@
             "type": "string"
           },
           "default": {},
-          "description": "The hook's variables its entry names.",
+          "description": "The variables of the hook that its entry names.",
           "type": "object"
         },
         "event": {
@@ -2407,7 +2407,7 @@
     },
     "HookAnswered": {
       "additionalProperties": false,
-      "description": "What the hook prints back.",
+      "description": "What the hook prints.",
       "properties": {
         "append": {
           "allOf": [
@@ -2415,7 +2415,7 @@
               "$ref": "#/$defs/Append"
             }
           ],
-          "description": "A line the hook adds to a file the harness named for it."
+          "description": "A line that the hook adds to a file that the harness named for it."
         },
         "exit_code": {
           "description": "Its exit code.",
@@ -2443,7 +2443,7 @@
         },
         {
           "const": "prompt",
-          "description": "A person's instruction went in: the agent works.",
+          "description": "A person gave an instruction: the agent works.",
           "type": "string"
         },
         {
@@ -2453,7 +2453,7 @@
         },
         {
           "const": "after_call",
-          "description": "A call came back: the agent works.",
+          "description": "A call returned: the agent works.",
           "type": "string"
         },
         {
@@ -2483,14 +2483,14 @@
         },
         {
           "const": "changed",
-          "description": "What the conversation runs on changed (its model): no claim about a turn, and\nnothing else of where it stands.",
+          "description": "The model of the conversation changed. This moment makes no claim about a turn, or\nabout other state of the conversation.",
           "type": "string"
         }
       ]
     },
     "HookMoment": {
       "additionalProperties": false,
-      "description": "The moment `hook/read` read.",
+      "description": "The moment that `hook/read` read.",
       "properties": {
         "moment": {
           "allOf": [
@@ -2498,17 +2498,17 @@
               "$ref": "#/$defs/Moment"
             }
           ],
-          "description": "The moment; absent: the document is no moment Steery carries."
+          "description": "The moment. Absent: the document is not a moment that Steery uses."
         }
       },
       "type": "object"
     },
     "HookRead": {
       "additionalProperties": false,
-      "description": "`hook/read`: what the harness handed its hook.",
+      "description": "`hook/read`: what the harness gave its hook.",
       "properties": {
         "document": {
-          "description": "The document the harness handed the hook, as it came.",
+          "description": "The document that the harness gave the hook, unchanged.",
           "type": "string"
         },
         "env": {
@@ -2516,7 +2516,7 @@
             "type": "string"
           },
           "default": {},
-          "description": "The hook's variables its entry names.",
+          "description": "The variables of the hook that its entry names.",
           "type": "object"
         },
         "event": {
@@ -2535,13 +2535,13 @@
       "description": "One host.",
       "properties": {
         "created_at": {
-          "description": "When it was made.",
+          "description": "When the vendor made the host.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
         },
         "host": {
-          "description": "The adapter's id for it.",
+          "description": "The adapter's id for the host.",
           "type": "string"
         },
         "labels": {
@@ -2549,11 +2549,11 @@
             "type": "string"
           },
           "default": {},
-          "description": "Its labels.",
+          "description": "The labels of the host.",
           "type": "object"
         },
         "state": {
-          "description": "Its state, in the vendor's own word.",
+          "description": "The state of the host, in the vendor's own word.",
           "type": "string"
         }
       },
@@ -2566,7 +2566,7 @@
     },
     "HostCall": {
       "additionalProperties": false,
-      "description": "`host/call`: a program's method, on the host.",
+      "description": "`host/call`: call a method of a program on the host.",
       "properties": {
         "method": {
           "type": "string"
@@ -2586,7 +2586,7 @@
     },
     "HostClose": {
       "additionalProperties": false,
-      "description": "`host/close`: a connection's side ends.",
+      "description": "`host/close`: one side of a connection ends.",
       "properties": {
         "conn": {
           "type": "string"
@@ -2603,7 +2603,7 @@
     },
     "HostData": {
       "additionalProperties": false,
-      "description": "`host/data`: a connection's bytes.",
+      "description": "`host/data`: the bytes of a connection.",
       "properties": {
         "bytes": {
           "description": "Base64, at most [`CHUNK`] bytes.",
@@ -2624,7 +2624,7 @@
       "description": "The facts of an adapter that makes hosts.",
       "properties": {
         "builds": {
-          "description": "It takes `hosts/ensure`'s `source: {dockerfile}`.",
+          "description": "It accepts `source: {dockerfile}` in `hosts/ensure`.",
           "type": "boolean"
         },
         "channel": {
@@ -2641,7 +2641,7 @@
         },
         "optional": {
           "default": [],
-          "description": "The optional methods it has, by their last word.",
+          "description": "The optional methods that it has, each by the last word of its name.",
           "items": {
             "$ref": "#/$defs/Optional"
           },
@@ -2656,7 +2656,7 @@
           "type": "string"
         },
         "unavailable": {
-          "description": "Why no host of this adapter can be had from this computer, whatever the\nsettings: one line naming what to install or change. Absent: one can.",
+          "description": "Why this computer cannot get a host from this adapter, with any settings. It is one\nline that names what to install or change. Absent: this computer can get a host.",
           "type": "string"
         }
       },
@@ -2694,7 +2694,7 @@
     },
     "HostWelcome": {
       "additionalProperties": false,
-      "description": "What `serve` is.",
+      "description": "The answer to `host/hello`: what `serve` is.",
       "properties": {
         "arch": {
           "description": "The processor architecture, as Rust names it.",
@@ -2704,7 +2704,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "The environment `serve` runs in: what a process control starts there is given, as\ncontrol gives its own to a process it starts on its own computer.",
+          "description": "The environment that `serve` runs in. Control gives this environment to a process\nthat it starts on the host. In the same way, control gives its own environment to a\nprocess that it starts on its own computer.",
           "type": "object"
         },
         "home": {
@@ -2716,20 +2716,20 @@
           "type": "string"
         },
         "port": {
-          "description": "The port of its loopback listener.",
+          "description": "The port of the loopback listener of `serve`.",
           "format": "uint16",
           "maximum": 65535,
           "minimum": 0,
           "type": "integer"
         },
         "protocol": {
-          "description": "The one protocol version it speaks, from those offered.",
+          "description": "The one protocol version that `serve` speaks, from the versions that control offered.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "release": {
-          "description": "Its release.",
+          "description": "The release of `serve`.",
           "type": "string"
         },
         "steery": {
@@ -2750,10 +2750,10 @@
     },
     "HostsChannel": {
       "additionalProperties": false,
-      "description": "`hosts/channel`: a local way to `command`'s standard input and output in a host.",
+      "description": "`hosts/channel`: a local channel to the standard input and output of `command` in a host.",
       "properties": {
         "command": {
-          "description": "The command inside it, its program first.",
+          "description": "The command inside the host, with its program first.",
           "items": {
             "type": "string"
           },
@@ -2778,7 +2778,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "description": "Only those carrying every one of these labels.",
+          "description": "Only the hosts that have all of these labels.",
           "type": "object"
         }
       },
@@ -2786,10 +2786,10 @@
     },
     "HostsListed": {
       "additionalProperties": false,
-      "description": "The hosts `hosts/list` found.",
+      "description": "The hosts that `hosts/list` found.",
       "properties": {
         "hosts": {
-          "description": "Each one.",
+          "description": "Each host.",
           "items": {
             "$ref": "#/$defs/Host"
           },
@@ -2811,21 +2811,21 @@
               "$ref": "#/$defs/CallMeta"
             }
           ],
-          "description": "The keys of an MCP call's `_meta` the harness names the call's conversation in\n(version 8), where one MCP client serves every conversation it runs and no header\ncan say whose a call is."
+          "description": "The keys in an MCP call's `_meta` where the harness names the conversation of the call\n(version 8). They apply where one MCP client serves every conversation that it runs,\nand no header can tell whose call it is."
         },
         "executables": {
-          "description": "The file names a harness process runs as.",
+          "description": "The file names that a harness process runs as.",
           "items": {
             "type": "string"
           },
           "type": "array"
         },
         "package": {
-          "description": "A path component naming its package, where an interpreter runs it.",
+          "description": "A path component that names its package, where an interpreter runs the harness.",
           "type": "string"
         },
         "session_variable": {
-          "description": "The variable the harness puts its conversation's id in, in its own process.",
+          "description": "The variable in which the harness puts the id of its conversation, in its own process.",
           "type": "string"
         }
       },
@@ -2877,7 +2877,7 @@
         },
         "runtime": {
           "$ref": "#/$defs/Runtime",
-          "description": "The runtime asking."
+          "description": "The runtime that asks."
         },
         "settings": {
           "additionalProperties": {
@@ -2898,7 +2898,7 @@
     },
     "Initialized": {
       "additionalProperties": false,
-      "description": "What a program is: the answer to `initialize`. A driver answers `harness`, an adapter\n`machine`, never both.",
+      "description": "What a program is: the answer to `initialize`. A driver answers `harness`. An adapter\nanswers `machine`. A program never answers both.",
       "properties": {
         "harness": {
           "allOf": [
@@ -2921,7 +2921,7 @@
           "description": "Who the program is."
         },
         "protocol": {
-          "description": "The one protocol version the program speaks, from those offered.",
+          "description": "The one protocol version that the program speaks, from the versions that the runtime\noffered.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
@@ -2943,14 +2943,14 @@
     },
     "Install": {
       "additionalProperties": false,
-      "description": "A harness's vendor's own installer, which the runtime runs only once a person agreed\n(at a terminal, or by `steery setup --install`), shown to them as `about` and `argv`,\nor by itself on a host an adapter made from no source of its person's.",
+      "description": "The harness vendor's own installer. The runtime shows `about` and `argv` to a person.\nIt runs the installer only after the person agrees, at a terminal or by\n`steery setup --install`. On a host that an adapter made from no source of its\nperson's, the runtime runs the installer by itself.",
       "properties": {
         "about": {
-          "description": "One line a person reads before agreeing, holding the exact command line `argv`\nruns and where it installs the harness.",
+          "description": "One line that a person reads before they agree. It holds the exact command line that\n`argv` runs, and where it installs the harness.",
           "type": "string"
         },
         "argv": {
-          "description": "What runs, run as is with the person's environment and no standard input.",
+          "description": "The command that runs. The runtime runs it as it is, with the person's environment\nand no standard input.",
           "items": {
             "type": "string"
           },
@@ -2965,7 +2965,7 @@
     },
     "Keeps": {
       "additionalProperties": false,
-      "description": "What a continue keeps without being told.",
+      "description": "What a continue keeps without an instruction.",
       "properties": {
         "model": {
           "description": "The model the conversation ran on.",
@@ -3038,7 +3038,7 @@
       "type": "object"
     },
     "Level": {
-      "description": "How far a driver goes with its harness.",
+      "description": "How much of the work with its harness a driver does.",
       "oneOf": [
         {
           "const": "observe",
@@ -3058,7 +3058,7 @@
       ]
     },
     "Lines": {
-      "description": "Who writes a session's lines, its record of what it is doing (§3.1).",
+      "description": "Who writes the lines of a session: the record of what the session does (§3.1).",
       "oneOf": [
         {
           "const": "agent",
@@ -3067,7 +3067,7 @@
         },
         {
           "const": "harness",
-          "description": "The harness itself: its agent is told nothing about writing them.",
+          "description": "The harness itself. Steery tells its agent nothing about the lines.",
           "type": "string"
         }
       ]
@@ -3077,14 +3077,14 @@
       "description": "`sessions/list`: the harness's conversations.",
       "properties": {
         "seen_since": {
-          "description": "Only those updated since.",
+          "description": "Only the conversations that changed since this time.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
         },
         "transcripts": {
           "default": [],
-          "description": "Transcripts the harness's own moments named, which may lie outside its folders.",
+          "description": "Transcripts that the harness's own moments named. They can be outside the harness's\nfolders.",
           "items": {
             "type": "string"
           },
@@ -3098,12 +3098,12 @@
       "description": "The conversations `sessions/list` found.",
       "properties": {
         "complete": {
-          "description": "No file named its conversation ambiguously: one absent is gone.",
+          "description": "True when no file names its conversation ambiguously. Then a conversation that is\nnot in the list is gone.",
           "type": "boolean"
         },
         "excluded": {
           "default": [],
-          "description": "Ids whose every transcript is no conversation: a sub-agent, a run with no person.",
+          "description": "Ids where no transcript is a conversation: for example, a sub-agent or a run with no\nperson.",
           "items": {
             "type": "string"
           },
@@ -3125,10 +3125,10 @@
     },
     "Listener": {
       "additionalProperties": false,
-      "description": "A process listening on a port.",
+      "description": "A process that listens on a port.",
       "properties": {
         "command": {
-          "description": "Its executable's name.",
+          "description": "The name of its executable.",
           "type": "string"
         },
         "pid": {
@@ -3151,7 +3151,7 @@
     },
     "Listeners": {
       "additionalProperties": false,
-      "description": "The processes `process/listening` found.",
+      "description": "The processes that `process/listening` found.",
       "properties": {
         "processes": {
           "items": {
@@ -3167,7 +3167,7 @@
     },
     "Listening": {
       "additionalProperties": false,
-      "description": "`process/listening`: the processes listening on a TCP port.",
+      "description": "`process/listening`: the processes that listen on a TCP port.",
       "properties": {
         "port": {
           "format": "uint16",
@@ -3183,10 +3183,10 @@
     },
     "Live": {
       "additionalProperties": false,
-      "description": "One assistant message being written, as the harness has it so far.",
+      "description": "One assistant message while the agent writes it, as the harness has it now.",
       "properties": {
         "at": {
-          "description": "The newest piece, milliseconds since 1970 on the harness's clock.",
+          "description": "The time of the newest piece, in milliseconds since 1970 on the harness's clock.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
@@ -3200,17 +3200,17 @@
           "description": "The message ended: every part of it came before this frame or in it."
         },
         "first_at": {
-          "description": "The first piece of this message, on the same clock.",
+          "description": "The time of the first piece of this message, on the same clock.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
         },
         "forming": {
-          "description": "The tool a call being formed names, before its input is sent.",
+          "description": "The tool that a call names while the agent forms the call, before the agent sends its\ninput.",
           "type": "string"
         },
         "message": {
-          "description": "The harness's key of the message, stable from its first frame to its last: the\nreply's identity, as `words.message` names it in the record.",
+          "description": "The harness's key for the message. It stays the same from the first frame to the last.\nIt is the identity of the reply, as `words.message` names it in the record.",
           "type": "string"
         },
         "parts": {
@@ -3230,11 +3230,11 @@
     },
     "LiveCall": {
       "additionalProperties": false,
-      "description": "A tool call running.",
+      "description": "A running tool call.",
       "properties": {
         "children": {
           "default": [],
-          "description": "Calls running inside it.",
+          "description": "Calls that run inside it.",
           "items": {
             "$ref": "#/$defs/LiveChild"
           },
@@ -3245,7 +3245,7 @@
           "type": "string"
         },
         "jobs": {
-          "description": "The background jobs it waits on that still run, oldest first, at most 8.",
+          "description": "The background jobs that it waits on and that still run, oldest first, at most 8.",
           "items": {
             "$ref": "#/$defs/LiveJob"
           },
@@ -3271,7 +3271,7 @@
     },
     "LiveChild": {
       "additionalProperties": false,
-      "description": "A call running inside another.",
+      "description": "A call that runs inside another call.",
       "properties": {
         "id": {
           "type": "string"
@@ -3291,7 +3291,7 @@
       "oneOf": [
         {
           "const": "plugin",
-          "description": "Steery's plugin door: the runtime speaks it directly and applies a pick itself; the\ndriver answers no live method.",
+          "description": "Steery's plugin door. The runtime uses it directly and applies a pick itself. The\ndriver answers no live method.",
           "type": "string"
         },
         {
@@ -3340,7 +3340,7 @@
     },
     "LiveJob": {
       "additionalProperties": false,
-      "description": "A background job a call waits on.",
+      "description": "A background job that a call waits on.",
       "properties": {
         "label": {
           "description": "What the harness calls it, often its command: at most 120 characters.",
@@ -3371,10 +3371,10 @@
     },
     "LivePart": {
       "additionalProperties": false,
-      "description": "One voice's text of a live message from `from` on. The voice's whole text is its non-blank\nblocks joined with `\"\\n\"`, as the fold joins them.",
+      "description": "The text of one voice in a live message, from `from` to the end. The whole text of the\nvoice is its non-blank blocks, joined with `\"\\n\"` as the fold joins them.",
       "properties": {
         "from": {
-          "description": "Where `text` starts in the voice's whole text, in Unicode scalar values. What was held\nfrom there on is replaced.",
+          "description": "Where `text` starts in the whole text of the voice, in Unicode scalar values. `text`\nreplaces all the text held from that point on.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
@@ -3396,10 +3396,10 @@
     },
     "LiveRetry": {
       "additionalProperties": false,
-      "description": "The try a harness waits to retry, as it said it.",
+      "description": "The try that a harness waits to retry, as it said it.",
       "properties": {
         "attempt": {
-          "description": "Which try of the request failed, the first 1.",
+          "description": "Which try of the request failed. The first try is 1.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
@@ -3409,7 +3409,7 @@
           "type": "string"
         },
         "of": {
-          "description": "How many tries it makes before it gives up.",
+          "description": "How many tries it makes before it stops.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
@@ -3422,7 +3422,7 @@
     },
     "LiveSettled": {
       "additionalProperties": false,
-      "description": "A turn Steery's words began that ended.",
+      "description": "A turn that Steery's words began and that ended.",
       "properties": {
         "at": {
           "format": "uint64",
@@ -3440,7 +3440,7 @@
         },
         "failed": {
           "default": false,
-          "description": "It stopped on an error the harness did not get past.",
+          "description": "It stopped on an error, and the harness did not continue after it.",
           "type": "boolean"
         },
         "says": {
@@ -3459,11 +3459,11 @@
     },
     "LiveState": {
       "additionalProperties": false,
-      "description": "Where a running conversation stands, as a door says it.",
+      "description": "The state of a running conversation, as a door gives it.",
       "properties": {
         "calls": {
           "default": [],
-          "description": "The top-level calls running, oldest first.",
+          "description": "The top-level calls that run now, oldest first.",
           "items": {
             "$ref": "#/$defs/LiveCall"
           },
@@ -3471,7 +3471,7 @@
         },
         "compacting": {
           "default": false,
-          "description": "The harness is compacting its context.",
+          "description": "The harness compacts its context now.",
           "type": "boolean"
         },
         "context_left": {
@@ -3485,22 +3485,22 @@
               "$ref": "#/$defs/Dialog"
             }
           ],
-          "description": "The harness's own dialog open in front of the person."
+          "description": "The harness's own dialog that is open in front of the person."
         },
         "ended": {
           "default": [],
-          "description": "Top-level calls that ended lately, oldest first, at most 64.",
+          "description": "Top-level calls that ended recently, oldest first, at most 64.",
           "items": {
             "$ref": "#/$defs/LiveEnded"
           },
           "type": "array"
         },
         "idle": {
-          "description": "The door checked the conversation idle; absent: it cannot say.",
+          "description": "The door found the conversation idle. Absent: it cannot say.",
           "type": "boolean"
         },
         "jobs": {
-          "description": "Background work running in the process that ends with it: jobs it runs and results\nwaiting to be told.",
+          "description": "Background work in the process that ends with the process: jobs that it runs, and\nresults that the harness did not yet give the agent.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
@@ -3510,7 +3510,7 @@
           "type": "string"
         },
         "pending": {
-          "description": "Words wait to go in.",
+          "description": "Words wait to go into the conversation.",
           "type": "boolean"
         },
         "retry": {
@@ -3519,7 +3519,7 @@
               "$ref": "#/$defs/LiveRetry"
             }
           ],
-          "description": "While it waits to retry: the try that failed, as the harness said it. Absent where\nit said nothing of it."
+          "description": "While it waits to retry: the try that failed, as the harness gave it. Absent where\nthe harness said nothing about it."
         },
         "retrying": {
           "default": false,
@@ -3528,14 +3528,14 @@
         },
         "settled": {
           "default": [],
-          "description": "Turns Steery's words began that ended, at most 16.",
+          "description": "Turns that Steery's words began and that ended, at most 16.",
           "items": {
             "$ref": "#/$defs/LiveSettled"
           },
           "type": "array"
         },
         "thinking": {
-          "description": "How hard it thinks.",
+          "description": "The thinking level.",
           "type": "string"
         },
         "turn": {
@@ -3585,7 +3585,7 @@
     },
     "LiveTurn": {
       "additionalProperties": false,
-      "description": "The turn running.",
+      "description": "The running turn.",
       "properties": {
         "began_at": {
           "format": "uint64",
@@ -3594,7 +3594,7 @@
         },
         "says": {
           "default": [],
-          "description": "The ids of `say`s it took as Steery's: a driver's, the `id` each `say` gave.",
+          "description": "The ids of the `say`s that it took as Steery's: for a driver, the `id` that each\n`say` gave.",
           "items": {
             "type": "string"
           },
@@ -3608,7 +3608,7 @@
     },
     "Locate": {
       "additionalProperties": false,
-      "description": "`sessions/locate`: one conversation by its id, however old.",
+      "description": "`sessions/locate`: one conversation by its id, of any age.",
       "properties": {
         "external_id": {
           "description": "The conversation.",
@@ -3626,7 +3626,7 @@
       "properties": {
         "session": {
           "$ref": "#/$defs/Session",
-          "description": "It."
+          "description": "The conversation."
         }
       },
       "required": [
@@ -3639,14 +3639,14 @@
       "description": "Where the runtime looks for a conversation's holder.",
       "properties": {
         "beyond": {
-          "description": "A process holding or naming the transcripts that one of these matches is\nsomewhere the runtime cannot reach, and is never signalled.",
+          "description": "A process that holds or names the transcripts, and that one of these matches, is\nsomewhere that the runtime cannot reach. The runtime never signals it.",
           "items": {
             "$ref": "#/$defs/Beyond"
           },
           "type": "array"
         },
         "strays": {
-          "description": "A process running as the harness that nothing answers for may hold it without\nholding a transcript open.",
+          "description": "A stray process of the harness, which nothing claims, can hold the conversation with\nno transcript open.",
           "type": "boolean"
         },
         "transcripts": {
@@ -3693,7 +3693,7 @@
             },
             "service": {
               "$ref": "#/$defs/ServiceManager",
-              "description": "The service manager that keeps the runtime running."
+              "description": "The service manager that keeps the runtime in operation."
             }
           },
           "required": [
@@ -3708,7 +3708,7 @@
           "description": "Hosts it makes, one for each conversation (§5.2).",
           "properties": {
             "builds": {
-              "description": "It takes `hosts/ensure`'s `source: {dockerfile}`.",
+              "description": "It accepts `source: {dockerfile}` in `hosts/ensure`.",
               "type": "boolean"
             },
             "channel": {
@@ -3725,7 +3725,7 @@
             },
             "optional": {
               "default": [],
-              "description": "The optional methods it has, by their last word.",
+              "description": "The optional methods that it has, each by the last word of its name.",
               "items": {
                 "$ref": "#/$defs/Optional"
               },
@@ -3744,7 +3744,7 @@
               "type": "string"
             },
             "unavailable": {
-              "description": "Why no host of this adapter can be had from this computer, whatever the\nsettings: one line naming what to install or change. Absent: one can.",
+              "description": "Why this computer cannot get a host from this adapter, with any settings. It is one\nline that names what to install or change. Absent: this computer can get a host.",
               "type": "string"
             }
           },
@@ -3770,14 +3770,14 @@
           "type": "integer"
         },
         "programs": {
-          "description": "Each program of the release, each id once.",
+          "description": "Each program of the release, with each id once.",
           "items": {
             "$ref": "#/$defs/Program"
           },
           "type": "array"
         },
         "release": {
-          "description": "The release's name, as its tag reads: letters, digits, `.`, `-`, `_` and `+`, at\nmost [`RELEASE_MAX`] characters. Every archive's name carries it.",
+          "description": "The name of the release, the same as its tag: letters, digits, `.`, `-`, `_` and `+`,\nat most [`RELEASE_MAX`] characters. The name of every archive contains it.",
           "type": "string"
         }
       },
@@ -3804,7 +3804,7 @@
     },
     "McpList": {
       "additionalProperties": false,
-      "description": "`mcp/list` (protocol 4): whose MCP servers. Absent `cwd`: the person's own, those every\nconversation loads; present: those a conversation started in that folder loads.",
+      "description": "`mcp/list` (protocol 4): whose MCP servers to list. Absent `cwd`: the person's own\nservers, which every conversation loads. Present: the servers that a conversation loads\nwhen it starts in that folder.",
       "properties": {
         "cwd": {
           "type": "string"
@@ -3814,7 +3814,7 @@
     },
     "McpServer": {
       "additionalProperties": false,
-      "description": "One MCP server: its name, and for one reached over a URL that URL without its secrets.\nNothing else of an entry leaves the machine: no command, argument, environment, header,\ntoken or OAuth field.",
+      "description": "One MCP server: its name and, for a server with a URL, that URL without its secrets.\nNothing else of an entry leaves the machine: no command, argument, environment, header,\ntoken or OAuth field.",
       "properties": {
         "server": {
           "type": "string"
@@ -3834,7 +3834,7 @@
       "description": "The MCP servers a harness loads.",
       "properties": {
         "complete": {
-          "description": "False where servers may also come from somewhere the driver cannot read: plugins,\nan account's connectors, configuration an administrator manages.",
+          "description": "False where servers can also come from places that the driver cannot read: plugins,\nthe connectors of an account, configuration that an administrator manages.",
           "type": "boolean"
         },
         "servers": {
@@ -3845,7 +3845,7 @@
           "type": "array"
         },
         "watch": {
-          "description": "The files whose change changes the list.",
+          "description": "The files that change the list when they change.",
           "items": {
             "type": "string"
           },
@@ -3879,7 +3879,7 @@
     },
     "Missing": {
       "additionalProperties": false,
-      "description": "A program of the host that cannot be started.",
+      "description": "A program of the host that `serve` cannot start.",
       "properties": {
         "line": {
           "description": "Why, in one line.",
@@ -3933,17 +3933,17 @@
     },
     "Models": {
       "additionalProperties": false,
-      "description": "`models`: the models the harness runs here. Its parameters are [`super::Empty`].",
+      "description": "`models`: the models that the harness runs here. Its parameters are [`super::Empty`].",
       "properties": {
         "models": {
-          "description": "Each one listed, the harness's default first.",
+          "description": "Each listed model, with the harness's default first.",
           "items": {
             "$ref": "#/$defs/Model"
           },
           "type": "array"
         },
         "signed_in": {
-          "description": "Whether the harness's own account is signed in here as of this listing, as the\nharness itself says: `true` signed in, `false` not; absent where the driver cannot\ntell.",
+          "description": "Whether the harness's own account is signed in here at the time of this list, as\nthe harness says. `true`: signed in. `false`: not signed in. Absent where the driver\ncannot tell.",
           "type": "boolean"
         },
         "unlisted": {
@@ -3952,11 +3952,11 @@
               "$ref": "#/$defs/Unlisted"
             }
           ],
-          "description": "The harness also runs models it does not list."
+          "description": "The harness also runs models that it does not list."
         },
         "watch": {
           "default": [],
-          "description": "The files whose change changes the list.",
+          "description": "The files that change the list when they change.",
           "items": {
             "type": "string"
           },
@@ -3970,7 +3970,7 @@
     },
     "Moment": {
       "additionalProperties": false,
-      "description": "A moment the harness stopped at.",
+      "description": "A moment where the harness stopped.",
       "properties": {
         "at": {
           "description": "When it happened.",
@@ -3984,7 +3984,7 @@
               "$ref": "#/$defs/Call"
             }
           ],
-          "description": "The call it is at."
+          "description": "The call of the moment."
         },
         "context_left": {
           "description": "The share of the context window left, 0 to 1.",
@@ -3993,7 +3993,7 @@
         },
         "continued": {
           "default": false,
-          "description": "At a `turn_end`: a hook already kept this turn going once.",
+          "description": "At a `turn_end`: a hook already made this turn continue once.",
           "type": "boolean"
         },
         "cwd": {
@@ -4001,7 +4001,7 @@
           "type": "string"
         },
         "event": {
-          "description": "The hook event it is.",
+          "description": "The hook event of the moment.",
           "type": "string"
         },
         "external_id": {
@@ -4014,10 +4014,10 @@
               "$ref": "#/$defs/Failure"
             }
           ],
-          "description": "At a `turn_end` whose `outcome` is `failed`: why, where the harness says."
+          "description": "At a `turn_end` whose `outcome` is `failed`: the cause, where the harness gives it."
         },
         "model": {
-          "description": "The model it runs on now, where the moment says: state, never an event.",
+          "description": "The model that the conversation runs on now, where the moment gives it. This is\nstate, never an event.",
           "type": "string"
         },
         "ok": {
@@ -4034,7 +4034,7 @@
         },
         "person_exited": {
           "default": false,
-          "description": "At a `session_end`: the person left at the prompt.",
+          "description": "At a `session_end`: the person exited at the prompt.",
           "type": "boolean"
         },
         "prompt": {
@@ -4046,14 +4046,14 @@
           "type": "string"
         },
         "suggestions": {
-          "description": "At a `permission`: the harness's own ways to allow such calls from now on, in its\norder; `always: {suggestion: n}` is the n-th.",
+          "description": "At a `permission`: the harness's own ways to allow such calls from now on, in its\norder. `always: {suggestion: n}` is the n-th.",
           "items": {
             "$ref": "#/$defs/Suggestion"
           },
           "type": "array"
         },
         "thinking": {
-          "description": "How hard it thinks now, in the harness's own word, where the moment says: state,\nnever an event.",
+          "description": "The thinking level now, in the harness's own word, where the moment gives it. This\nis state, never an event.",
           "type": "string"
         },
         "transcript": {
@@ -4083,10 +4083,10 @@
     },
     "Need": {
       "additionalProperties": false,
-      "description": "What a harness lacks on this host that only its person can give, and the ways they can.",
+      "description": "What a harness lacks on this host that only its person can give, and the ways that the\nperson can give it.",
       "properties": {
         "id": {
-          "description": "The same for this lack in every plan (`sign-in`): what `needs/give` names.",
+          "description": "The id of this need, the same in every plan (`sign-in`). `needs/give` names the need\nby this id.",
           "type": "string"
         },
         "line": {
@@ -4098,7 +4098,7 @@
           "type": "string"
         },
         "ways": {
-          "description": "Each way its person can give it, the driver's pick first; at least one.",
+          "description": "Each way that the person can give it, with the driver's preferred way first. At\nleast one.",
           "items": {
             "$ref": "#/$defs/Way"
           },
@@ -4115,14 +4115,14 @@
     },
     "NeedLink": {
       "additionalProperties": false,
-      "description": "A page a way's person opens.",
+      "description": "A page that the person opens for a way.",
       "properties": {
         "fills": {
-          "description": "The field its return address fills, where the page sends the browser back to a\nloopback address that the app that opened it catches.",
+          "description": "The field that the return address of the page fills. Only where the page sends the\nbrowser back to a loopback address, and the app that opened the page receives it.",
           "type": "string"
         },
         "label": {
-          "description": "What its button says.",
+          "description": "The text of its button.",
           "type": "string"
         },
         "url": {
@@ -4157,7 +4157,7 @@
     },
     "Opened": {
       "additionalProperties": false,
-      "description": "`host/opened`: the host's listener took a connection.",
+      "description": "`host/opened`: the listener of the host accepted a connection.",
       "properties": {
         "conn": {
           "description": "`h<n>`.",
@@ -4170,7 +4170,7 @@
       "type": "object"
     },
     "Optional": {
-      "description": "An optional method of an adapter that makes hosts, by its last word.",
+      "description": "An optional method of an adapter that makes hosts, by the last word of its name.",
       "enum": [
         "archive",
         "pause",
@@ -4208,17 +4208,17 @@
         },
         {
           "const": "plugin",
-          "description": "Steery's plugin, which dials the door.",
+          "description": "Steery's plugin, which connects to the door.",
           "type": "string"
         }
       ]
     },
     "Paths": {
       "additionalProperties": false,
-      "description": "The files `process/files` found open.",
+      "description": "The open files that `process/files` found.",
       "properties": {
         "paths": {
-          "description": "Each one's absolute path.",
+          "description": "The absolute path of each file.",
           "items": {
             "type": "string"
           },
@@ -4243,7 +4243,7 @@
           "type": "string"
         },
         "thinking": {
-          "description": "How hard it thinks, in the harness's own word.",
+          "description": "The thinking level, in the harness's own word.",
           "type": "string"
         }
       },
@@ -4254,7 +4254,7 @@
     },
     "Picked": {
       "additionalProperties": false,
-      "description": "The model and thinking a conversation runs on, as read back.",
+      "description": "The model and thinking that a conversation runs on, as the driver read them back.",
       "properties": {
         "model": {
           "type": "string"
@@ -4267,10 +4267,10 @@
     },
     "Plan": {
       "additionalProperties": false,
-      "description": "What installs the runtime as a service; the runtime writes and runs it.",
+      "description": "What installs the runtime as a service. The runtime writes the files and runs the commands.",
       "properties": {
         "commands": {
-          "description": "The commands to run after, in order; the first failure of one that may\nnot fail stops the rest.",
+          "description": "The commands to run after the files, in order. When a command that must not fail\nfails, the runtime does not run the rest.",
           "items": {
             "$ref": "#/$defs/PlanCommand"
           },
@@ -4303,7 +4303,7 @@
         },
         "may_fail": {
           "default": false,
-          "description": "Its failure does not stop the plan.",
+          "description": "When this command fails, the plan continues.",
           "type": "boolean"
         }
       },
@@ -4314,7 +4314,7 @@
     },
     "Planned": {
       "additionalProperties": false,
-      "description": "The harness found here, and the entries that set it up.",
+      "description": "The harness that the driver found here, and the entries that configure it.",
       "properties": {
         "entries": {
           "description": "What the runtime writes into the harness, and nothing else.",
@@ -4337,10 +4337,10 @@
               "$ref": "#/$defs/Install"
             }
           ],
-          "description": "How the harness is installed here, where it is not (`found` absent) and its\ndriver can install it: its vendor's own installer."
+          "description": "The vendor's own installer for the harness. Present only where the harness is not\ninstalled here (`found` absent) and its driver can install it."
         },
         "needs": {
-          "description": "What the harness lacks here that only its person can give (a sign-in, a setting),\neach asked on one card and given back by `needs/give`; version 5 only, empty in an\nolder one.",
+          "description": "What the harness lacks here that only its person can give, for example a sign-in or\na setting. Steery asks for each need on one card, and the runtime gives the answer\nback by `needs/give`. Version 5 only: empty in an older version.",
           "items": {
             "$ref": "#/$defs/Need"
           },
@@ -4355,7 +4355,7 @@
           "type": "array"
         },
         "refused": {
-          "description": "Why Steery does not set this harness up here, in one line.",
+          "description": "Why Steery does not configure this harness here, in one line.",
           "type": "string"
         }
       },
@@ -4395,10 +4395,10 @@
       "oneOf": [
         {
           "additionalProperties": false,
-          "description": "The first frame, within 5 s.",
+          "description": "The first frame. The plugin sends it within 5 s.",
           "properties": {
             "cwd": {
-              "description": "The folder the conversation runs in, as the harness holds it now.",
+              "description": "The folder that the conversation runs in, as the harness has it now.",
               "type": "string"
             },
             "door": {
@@ -4417,7 +4417,7 @@
                   "$ref": "#/$defs/SessionRef"
                 }
               ],
-              "description": "The conversation a sub-agent's copy works in."
+              "description": "The conversation that the copy of a sub-agent works in."
             },
             "mode": {
               "$ref": "#/$defs/DoorMode"
@@ -4429,7 +4429,7 @@
               "type": "integer"
             },
             "session_id": {
-              "description": "The conversation this copy is in; a sub-agent's own id where it is one.",
+              "description": "The conversation that this copy is in. For a sub-agent, the sub-agent's own id.",
               "type": "string"
             },
             "state": {
@@ -4474,7 +4474,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "A moment of a hook `via: door`: the harness's own payload, which the runtime reads\nwith `hook/read` as it reads a command hook's document. A moment `id` is read once.",
+          "description": "A moment of a hook with `via: door`: the harness's own payload. The runtime reads it\nwith `hook/read`, as it reads the document of a command hook. The runtime reads each\nmoment `id` once.",
           "properties": {
             "document": {
               "description": "The harness's hook payload, as the plugin got it."
@@ -4501,14 +4501,14 @@
         },
         {
           "additionalProperties": false,
-          "description": "A turn of the copy's own ended.",
+          "description": "A turn that the copy itself ran ended.",
           "properties": {
             "asked": {
               "description": "The turn asked its person something.",
               "type": "boolean"
             },
             "continued": {
-              "description": "The turn was already kept going once.",
+              "description": "The plugin already continued this turn once.",
               "type": "boolean"
             },
             "id": {
@@ -4539,7 +4539,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "The answer to an ask: `ok` the op's answer, or `refused` with the harness's line.",
+          "description": "The answer to an ask: `ok` with the answer of the op, or `refused` with the line of the\nharness.",
           "properties": {
             "error": {
               "type": "string"
@@ -4564,10 +4564,10 @@
         },
         {
           "additionalProperties": false,
-          "description": "The harness's records after `after`, in the order it appended them; sent only on a\nconnection welcomed with `entries`.",
+          "description": "The records of the harness after `after`, in the order that the harness appended them.\nThe plugin sends them only on a connection that the runtime welcomed with `entries`.",
           "properties": {
             "after": {
-              "description": "The id of the record before the first one here; absent: these start at the\nconversation's first record.",
+              "description": "The id of the record before the first record in this frame. Absent: these records\nstart at the first record of the conversation.",
               "type": "string"
             },
             "records": {
@@ -4607,10 +4607,10 @@
         },
         {
           "additionalProperties": false,
-          "description": "The agent's message as it is being written; sent only on a connection welcomed with\n`live`.",
+          "description": "The message of the agent while the agent writes it. The plugin sends it only on a\nconnection that the runtime welcomed with `live`.",
           "properties": {
             "at": {
-              "description": "The newest piece, milliseconds since 1970 on the harness's clock.",
+              "description": "The time of the newest piece, in milliseconds since 1970 on the harness's clock.",
               "format": "uint64",
               "minimum": 0,
               "type": "integer"
@@ -4624,17 +4624,17 @@
               "description": "The message ended: every part of it came before this frame or in it."
             },
             "first_at": {
-              "description": "The first piece of this message, on the same clock.",
+              "description": "The time of the first piece of this message, on the same clock.",
               "format": "uint64",
               "minimum": 0,
               "type": "integer"
             },
             "forming": {
-              "description": "The tool a call being formed names, before its input is sent.",
+              "description": "The tool that a call names while the agent forms the call, before the agent sends its\ninput.",
               "type": "string"
             },
             "message": {
-              "description": "The harness's key of the message, stable from its first frame to its last: the\nreply's identity, as `words.message` names it in the record.",
+              "description": "The harness's key for the message. It stays the same from the first frame to the last.\nIt is the identity of the reply, as `words.message` names it in the record.",
               "type": "string"
             },
             "parts": {
@@ -4660,7 +4660,7 @@
       ]
     },
     "ProcessEnded": {
-      "description": "How a process `process/start` started ended, as its `status` file holds it.",
+      "description": "How a process that `process/start` started ended, as its `status` file holds it.",
       "oneOf": [
         {
           "additionalProperties": false,
@@ -4694,21 +4694,21 @@
     },
     "ProcessEntry": {
       "additionalProperties": false,
-      "description": "One running process.",
+      "description": "One process that runs.",
       "properties": {
         "args": {
-          "description": "Its arguments, its own name first; absent where they cannot be read, and it may\nthen be any program.",
+          "description": "Its arguments, with its own name first. Absent where the adapter cannot read them.\nThen the process can be any program.",
           "items": {
             "type": "string"
           },
           "type": "array"
         },
         "command": {
-          "description": "Its executable's name.",
+          "description": "The name of its executable.",
           "type": "string"
         },
         "cwd": {
-          "description": "The folder it works in now; absent where it cannot be read.",
+          "description": "The folder that it works in now. Absent where the adapter cannot read it.",
           "type": "string"
         },
         "pgid": {
@@ -4724,7 +4724,7 @@
           "type": "integer"
         },
         "ppid": {
-          "description": "Its parent's pid.",
+          "description": "The pid of its parent.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
@@ -4736,7 +4736,7 @@
           "type": "integer"
         },
         "stopped": {
-          "description": "It is stopped (Ctrl-Z, SIGSTOP).",
+          "description": "The process is stopped (Ctrl-Z, SIGSTOP).",
           "type": "boolean"
         },
         "user": {
@@ -4764,7 +4764,7 @@
         },
         "service": {
           "$ref": "#/$defs/ServiceManager",
-          "description": "The service manager that keeps the runtime running."
+          "description": "The service manager that keeps the runtime in operation."
         }
       },
       "required": [
@@ -4775,10 +4775,10 @@
     },
     "ProcessList": {
       "additionalProperties": false,
-      "description": "`process/list`: the processes running.",
+      "description": "`process/list`: the processes that run.",
       "properties": {
         "pids": {
-          "description": "Only these; absent: every process.",
+          "description": "Only these pids. Absent: every process.",
           "items": {
             "format": "uint32",
             "minimum": 0,
@@ -4791,10 +4791,10 @@
     },
     "ProcessListed": {
       "additionalProperties": false,
-      "description": "The processes `process/list` found.",
+      "description": "The processes that `process/list` found.",
       "properties": {
         "processes": {
-          "description": "Each one running, no zombie; a pid asked for that runs nothing is absent.",
+          "description": "Each process that runs, with no zombie. Where no process has a pid in `pids`, that pid\nis absent.",
           "items": {
             "$ref": "#/$defs/ProcessEntry"
           },
@@ -4818,7 +4818,7 @@
           "type": "array"
         },
         "cwd": {
-          "description": "The folder it runs in.",
+          "description": "The folder that the process runs in.",
           "type": "string"
         },
         "env": {
@@ -4826,35 +4826,35 @@
             "type": "string"
           },
           "default": {},
-          "description": "Its whole environment.",
+          "description": "The whole environment of the process.",
           "type": "object"
         },
         "held": {
-          "description": "Its standard input never ends; `stdin` is absent. An adapter refuses `invalid` where\nboth are set.",
+          "description": "The standard input of the process never ends, and `stdin` is absent. An adapter\nrefuses `invalid` where the request sets both.",
           "type": "boolean"
         },
         "scope": {
-          "description": "The service (its label) whose share of the CPU it runs in, where there is one.",
+          "description": "The label of the service whose share of the CPU the process runs in, where there is\none.",
           "type": "string"
         },
         "started": {
-          "description": "`<what>` of `STEERY_STARTED`: the adapter sets `STEERY_STARTED=<its own pid>:<what>`\nin the process's environment, over any value `env` gives it.",
+          "description": "The `<what>` of `STEERY_STARTED`. The adapter sets `STEERY_STARTED=<its own pid>:<what>`\nin the environment of the process. This value replaces any value that `env` gives it.",
           "type": "string"
         },
         "status": {
-          "description": "The file the adapter writes how the process ended to ([`Ended`]), 0600, once it\nreaps it.",
+          "description": "The file where the adapter writes how the process ended ([`Ended`]), at mode 0600. The\nadapter writes it when it reaps the process.",
           "type": "string"
         },
         "stderr": {
-          "description": "The file its standard error is appended to.",
+          "description": "The file that the adapter appends the standard error of the process to.",
           "type": "string"
         },
         "stdin": {
-          "description": "The file its standard input reads; absent: none.",
+          "description": "The file that its standard input reads. Absent: none.",
           "type": "string"
         },
         "stdout": {
-          "description": "The file its standard output is appended to.",
+          "description": "The file that the adapter appends the standard output of the process to.",
           "type": "string"
         }
       },
@@ -4878,14 +4878,14 @@
           "type": "object"
         },
         "id": {
-          "description": "The id its `initialize` answers.",
+          "description": "The id that its `initialize` answers.",
           "maxLength": 64,
           "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
           "type": "string"
         },
         "kind": {
           "$ref": "#/$defs/Kind",
-          "description": "The kind its `initialize` answers: `harness` for a driver, `machine` for an adapter."
+          "description": "The kind that its `initialize` answers: `harness` for a driver, `machine` for an adapter."
         }
       },
       "required": [
@@ -4897,10 +4897,10 @@
     },
     "ProgramInfo": {
       "additionalProperties": false,
-      "description": "Who a program is, and how a person sees it: every surface Steery draws a harness or a\nmachine on reads these and nothing else.",
+      "description": "Who a program is, and how a person sees it. Each surface where Steery draws a harness or a\nmachine reads these fields and nothing else.",
       "properties": {
         "id": {
-          "description": "What `Session.harness` names for a driver, and a machine's adapter for an adapter.",
+          "description": "For a driver, the id that `Session.harness` names. For an adapter, the id that a\nmachine names as its adapter.",
           "maxLength": 64,
           "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
           "type": "string"
@@ -4914,7 +4914,7 @@
           "type": "string"
         },
         "mark": {
-          "description": "Its mark: the `d` of one SVG path in a 24 by 24 box, filled with the even-odd rule,\nat most [`Self::MARK_MAX`] bytes. Absent: the tile shows `short`.",
+          "description": "Its mark: the `d` of one SVG path in a 24 by 24 box, at most [`Self::MARK_MAX`] bytes.\nSurfaces fill the path with the even-odd rule. Absent: the tile shows `short`.",
           "type": "string"
         },
         "release": {
@@ -4941,17 +4941,17 @@
     },
     "Programs": {
       "additionalProperties": false,
-      "description": "What `host/programs` answers: the host's programs, as each answered `initialize`, and\nwhy each that does not run cannot be started.",
+      "description": "What `host/programs` answers: the programs of the host, each as it answered `initialize`.\nFor each program that does not run, it also says why `serve` cannot start it.",
       "properties": {
         "drivers": {
-          "description": "Its drivers that run.",
+          "description": "The drivers of the host that run.",
           "items": {
             "$ref": "#/$defs/Initialized"
           },
           "type": "array"
         },
         "missing": {
-          "description": "Its drivers that cannot be started, each with why.",
+          "description": "The drivers of the host that `serve` cannot start, each with why.",
           "items": {
             "$ref": "#/$defs/Missing"
           },
@@ -4959,7 +4959,7 @@
         },
         "os": {
           "$ref": "#/$defs/Initialized",
-          "description": "Its operating-system adapter."
+          "description": "The operating-system adapter of the host."
         }
       },
       "required": [
@@ -4974,7 +4974,7 @@
       "description": "`hosts/put`: write a file into a host. Its result is [`super::Empty`].",
       "properties": {
         "content": {
-          "description": "Its whole content, base64.",
+          "description": "The whole content of the file, base64.",
           "type": "string"
         },
         "host": {
@@ -4982,13 +4982,13 @@
           "type": "string"
         },
         "mode": {
-          "description": "Its Unix mode bits.",
+          "description": "The Unix mode bits of the file.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "path": {
-          "description": "The absolute file inside it.",
+          "description": "The absolute path of the file inside the host.",
           "type": "string"
         }
       },
@@ -5002,13 +5002,13 @@
     },
     "Question": {
       "additionalProperties": false,
-      "description": "A question a call puts to the person.",
+      "description": "A question that a call asks the person.",
       "properties": {
         "header": {
           "type": "string"
         },
         "multiple": {
-          "description": "More than one option may be chosen.",
+          "description": "The person can choose more than one option.",
           "type": "boolean"
         },
         "options": {
@@ -5045,7 +5045,7 @@
                 "type": "string"
               },
               "default": {},
-              "description": "The variables it adds to the environment.",
+              "description": "The variables to add to the environment of the command.",
               "type": "object"
             }
           },
@@ -5056,7 +5056,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "Bytes the adapter carries itself, as `stream/*` messages under this id.",
+          "description": "The adapter carries the bytes itself, as `stream/*` messages with this id.",
           "properties": {
             "stream": {
               "type": "string"
@@ -5083,7 +5083,7 @@
           "type": "string"
         },
         "sub_agent": {
-          "description": "One of its sub-agents, read instead.",
+          "description": "One of its sub-agents, to read in place of the conversation.",
           "type": "string"
         },
         "tail": {
@@ -5099,7 +5099,7 @@
       "type": "object"
     },
     "ReadAs": {
-      "description": "How a reader's output reads.",
+      "description": "How the runtime reads a reader's output.",
       "oneOf": [
         {
           "const": "whole",
@@ -5115,10 +5115,10 @@
     },
     "Reader": {
       "additionalProperties": false,
-      "description": "`reader`: a launch plan for a one-shot read.",
+      "description": "`reader`: a launch plan for a read that runs once.",
       "properties": {
         "asked": {
-          "description": "The text read.",
+          "description": "The text that the reader reads.",
           "type": "string"
         },
         "cwd": {
@@ -5134,12 +5134,12 @@
           "type": "string"
         },
         "thinking": {
-          "description": "The thinking level, as the driver's `models` spells it for that model; absent: the\ndriver's own for a read. One the harness refuses is `selection-unsupported`.",
+          "description": "The thinking level, as the driver's `models` spells it for that model. Absent: the\ndriver's own level for a read. A level that the harness refuses gives\n`selection-unsupported`.",
           "type": "string"
         },
         "tools": {
           "$ref": "#/$defs/ReaderTools",
-          "description": "The tools it may use."
+          "description": "The tools that it can use."
         }
       },
       "required": [
@@ -5155,7 +5155,7 @@
       "properties": {
         "known": {
           "default": [],
-          "description": "Models the reader runs that `models` may not list.",
+          "description": "Models that the reader runs, which `models` possibly does not list.",
           "items": {
             "type": "string"
           },
@@ -5163,10 +5163,10 @@
         },
         "sealed": {
           "$ref": "#/$defs/Sealed",
-          "description": "What the reader shuts out."
+          "description": "What the reader blocks."
         },
         "unnamed": {
-          "description": "The reader runs the harness's own model when given none.",
+          "description": "The reader runs the harness's own model when it gets no model.",
           "type": "boolean"
         }
       },
@@ -5178,7 +5178,7 @@
     },
     "ReaderFile": {
       "additionalProperties": false,
-      "description": "A file a reader's plan writes first.",
+      "description": "A file that a reader's plan writes first.",
       "properties": {
         "content": {
           "type": "string"
@@ -5219,7 +5219,7 @@
         },
         "files": {
           "default": [],
-          "description": "Files the runtime writes first, relative to `cwd`.",
+          "description": "Files that the runtime writes first, relative to `cwd`.",
           "items": {
             "$ref": "#/$defs/ReaderFile"
           },
@@ -5227,11 +5227,11 @@
         },
         "read": {
           "$ref": "#/$defs/ReadAs",
-          "description": "How its output reads."
+          "description": "How the runtime reads its output."
         },
         "stdin": {
           "$ref": "#/$defs/Stdin",
-          "description": "`words`: `asked` goes on its standard input."
+          "description": "`words`: the runtime writes `asked` to its standard input."
         }
       },
       "required": [
@@ -5244,7 +5244,7 @@
     },
     "ReaderRead": {
       "additionalProperties": false,
-      "description": "`reader/read`: a reader's output, read as its answer.",
+      "description": "`reader/read`: a reader's output, to read as its answer.",
       "properties": {
         "output": {
           "type": "string"
@@ -5256,7 +5256,7 @@
       "type": "object"
     },
     "ReaderTools": {
-      "description": "The tools a reader may use.",
+      "description": "The tools that a reader can use.",
       "enum": [
         "none",
         "read"
@@ -5265,10 +5265,10 @@
     },
     "Recap": {
       "additionalProperties": false,
-      "description": "`recap`: a conversation's own model says where it stands. Its answer is a [`Text`].",
+      "description": "`recap`: the conversation's own model describes its state. Its answer is a [`Text`].",
       "properties": {
         "asked": {
-          "description": "What is asked of it.",
+          "description": "What Steery asks the model.",
           "type": "string"
         },
         "external_id": {
@@ -5302,7 +5302,7 @@
     },
     "ReceiptFind": {
       "additionalProperties": false,
-      "description": "`receipt/find`: the input carrying a delivery marker, after a mark.",
+      "description": "`receipt/find`: the input that carries a delivery marker, after a mark.",
       "properties": {
         "delivery": {
           "description": "The delivery marker's name.",
@@ -5313,7 +5313,7 @@
           "type": "string"
         },
         "mark": {
-          "description": "As `receipt/mark` answered.",
+          "description": "The mark that `receipt/mark` gave.",
           "type": "string"
         }
       },
@@ -5326,7 +5326,7 @@
     },
     "ReceiptMark": {
       "additionalProperties": false,
-      "description": "`receipt/mark`: a point in a conversation before words are sent.",
+      "description": "`receipt/mark`: a point in a conversation before the runtime sends words.",
       "properties": {
         "external_id": {
           "description": "The conversation.",
@@ -5347,7 +5347,7 @@
           "type": "string"
         },
         "value": {
-          "description": "The record; absent where it is over [`super::door::RECORDS_MAX`]: the driver reads\nit from the transcript by `id`."
+          "description": "The record. Absent where it is over [`super::door::RECORDS_MAX`]: then the driver\nreads it from the transcript by `id`."
         }
       },
       "required": [
@@ -5384,7 +5384,7 @@
       "oneOf": [
         {
           "additionalProperties": false,
-          "description": "The hello was taken. `entries`: this runtime takes the harness's records. `live`: it\ntakes `live` frames.",
+          "description": "The runtime accepted the hello. `entries`: this runtime takes the records of the\nharness. `live`: it takes `live` frames.",
           "properties": {
             "door": {
               "format": "uint32",
@@ -5438,13 +5438,13 @@
           "description": "Something the runtime asks of the copy.",
           "oneOf": [
             {
-              "description": "Words into the conversation; answered with [`DoorSaid`] once the harness holds them,\nand, asked again under the same `id` while it holds them, once it took them.",
+              "description": "Words into the conversation. The copy answers with [`DoorSaid`] when the harness holds\nthe words. When the runtime asks again under the same `id` while the harness holds\nthem, the copy answers when the harness took them.",
               "properties": {
                 "id": {
                   "type": "string"
                 },
                 "idle": {
-                  "description": "Only where the conversation is idle; else `harness-busy`, nothing handed over.",
+                  "description": "Only when the conversation is idle. Else the copy refuses with `harness-busy` and\ngives nothing to the harness.",
                   "type": "boolean"
                 },
                 "mode": {
@@ -5455,7 +5455,7 @@
                   "type": "string"
                 },
                 "throw": {
-                  "description": "One throw's words go in once.",
+                  "description": "The words of one throw go in only once.",
                   "type": "string"
                 },
                 "words": {
@@ -5472,7 +5472,7 @@
               "type": "object"
             },
             {
-              "description": "A model and thinking; answered with [`super::harness::Picked`].",
+              "description": "A model and thinking. The copy answers with [`super::harness::Picked`].",
               "properties": {
                 "id": {
                   "type": "string"
@@ -5495,7 +5495,7 @@
               "type": "object"
             },
             {
-              "description": "Stop the turn running; answered with [`DoorStopped`]. Without `say`, the person's\npause.",
+              "description": "Stop the turn that runs now. The copy answers with [`DoorStopped`]. Without `say`, this\nis the person's pause.",
               "properties": {
                 "id": {
                   "type": "string"
@@ -5515,7 +5515,7 @@
               "type": "object"
             },
             {
-              "description": "Force the words of `say`, held by the harness and not yet taken, in now: the turn\nrunning is aborted, its conversation not parked, and the harness takes them as its\nnext input; words it let go with the abort are handed again, once. Answered with\n[`DoorStopped`].",
+              "description": "Force the words of `say` in now. The harness holds these words and did not take them yet.\n\n1. The copy aborts the turn that runs now. It does not park the conversation.\n2. The harness takes the words as its next input.\n3. The copy gives again, once, the words that the harness let go with the abort.\n\nThe copy answers with [`DoorStopped`].",
               "properties": {
                 "id": {
                   "type": "string"
@@ -5536,7 +5536,7 @@
               "type": "object"
             },
             {
-              "description": "Where the conversation stands, in its own model's words; answered with\n[`super::harness::Text`].",
+              "description": "The state of the conversation, in the words of its own model. The copy answers with\n[`super::harness::Text`].",
               "properties": {
                 "id": {
                   "type": "string"
@@ -5553,7 +5553,7 @@
               "type": "object"
             },
             {
-              "description": "Forget everything before a cut in favour of `summary`; answered with [`DoorCompacted`].",
+              "description": "Forget everything before a cut, and keep `summary` in its place. The copy answers with\n[`DoorCompacted`].",
               "properties": {
                 "before": {
                   "format": "uint64",
@@ -5601,10 +5601,10 @@
     },
     "Said": {
       "additionalProperties": false,
-      "description": "Whether the harness was seen taking said words.",
+      "description": "Whether the driver saw the harness take the words.",
       "properties": {
         "took": {
-          "description": "False: handed over unconfirmed.",
+          "description": "False: the driver gave the words but has no confirmation.",
           "type": "boolean"
         }
       },
@@ -5627,7 +5627,7 @@
           "type": "string"
         },
         "if_unheld": {
-          "description": "It stands only if no process holds the conversation.",
+          "description": "This sample is true only if no process holds the conversation.",
           "type": "boolean"
         },
         "model": {
@@ -5686,12 +5686,12 @@
           "type": "string"
         },
         "id": {
-          "description": "The say's name (version 7): the delivery its words carry, else one of the runtime's\nown. The driver names it in `turn.says` of the turn that took the words.",
+          "description": "The name of the say (version 7): the delivery that its words carry, else a name of\nthe runtime's own. The driver names it in `turn.says` of the turn that took the words.",
           "type": "string"
         },
         "mode": {
           "$ref": "#/$defs/SayMode",
-          "description": "When they go in."
+          "description": "When the words go into the conversation."
         },
         "words": {
           "description": "The words.",
@@ -5706,16 +5706,16 @@
       "type": "object"
     },
     "SayMode": {
-      "description": "When said words go in.",
+      "description": "When the words of a `say` go into the conversation.",
       "oneOf": [
         {
           "const": "steer",
-          "description": "Into the turn running.",
+          "description": "Into the running turn.",
           "type": "string"
         },
         {
           "const": "queue",
-          "description": "After the turn running.",
+          "description": "After the running turn.",
           "type": "string"
         },
         {
@@ -5730,12 +5730,12 @@
       "oneOf": [
         {
           "const": "context",
-          "description": "Steery's paragraph for the conversation; at a `turn_end` it keeps the agent going,\nat a `sub_agent_start` it reaches the sub-agent.",
+          "description": "Steery's paragraph for the conversation. At a `turn_end`, it makes the agent\ncontinue. At a `sub_agent_start`, it goes to the sub-agent.",
           "type": "string"
         },
         {
           "const": "notice",
-          "description": "That words wait for the agent.",
+          "description": "A notice that words wait for the agent.",
           "type": "string"
         },
         {
@@ -5752,7 +5752,7 @@
     },
     "Sealed": {
       "additionalProperties": false,
-      "description": "What a reader shuts out (true) or still reaches (false).",
+      "description": "What a reader blocks (true) or can still reach (false).",
       "properties": {
         "extensions": {
           "description": "Extensions and plugins.",
@@ -5803,7 +5803,7 @@
       "description": "`service/status`, `service/start`, `service/restart`, `service/remove`: one service.",
       "properties": {
         "label": {
-          "description": "The service's name.",
+          "description": "The name of the service.",
           "type": "string"
         }
       },
@@ -5822,7 +5822,7 @@
     },
     "ServicePlan": {
       "additionalProperties": false,
-      "description": "`service/plan`: what installs the runtime as a service. It is pure.",
+      "description": "`service/plan`: what installs the runtime as a service. The method is pure.",
       "properties": {
         "args": {
           "default": [],
@@ -5833,11 +5833,11 @@
           "type": "array"
         },
         "binary": {
-          "description": "The runtime's binary.",
+          "description": "The binary of the runtime.",
           "type": "string"
         },
         "cpu": {
-          "description": "Its share, 1 to 100 percent, of what the computer grants its user.",
+          "description": "The share of the runtime, 1 to 100 percent, of what the computer grants its user.",
           "format": "uint8",
           "maximum": 255,
           "minimum": 0,
@@ -5852,15 +5852,15 @@
           "type": "object"
         },
         "label": {
-          "description": "The service's name.",
+          "description": "The name of the service.",
           "type": "string"
         },
         "log": {
-          "description": "The file its own output is appended to.",
+          "description": "The file that the service appends its own output to.",
           "type": "string"
         },
         "port": {
-          "description": "The loopback port whose listener the service manager hands it.",
+          "description": "The service manager gives the runtime the listener of this loopback port.",
           "format": "uint16",
           "maximum": 65535,
           "minimum": 0,
@@ -5882,7 +5882,7 @@
       "properties": {
         "app": {
           "default": false,
-          "description": "It was started in the harness's app.",
+          "description": "It started in the harness's app.",
           "type": "boolean"
         },
         "created_at": {
@@ -5900,12 +5900,12 @@
           "type": "string"
         },
         "parent": {
-          "description": "The conversation it was forked from.",
+          "description": "The conversation that this one is a fork of.",
           "type": "string"
         },
         "sub_agents": {
           "default": [],
-          "description": "The sub-agents working in it.",
+          "description": "The sub-agents that work in it.",
           "items": {
             "$ref": "#/$defs/SubAgent"
           },
@@ -5916,7 +5916,7 @@
           "type": "string"
         },
         "transcripts": {
-          "description": "Every file of it on this host, oldest first: at least one where the harness\nkeeps transcript files (`HarnessInfo.transcript`), none where it does not.",
+          "description": "Every file of it on this host, oldest first. At least one where the harness keeps\ntranscript files (`HarnessInfo.transcript`), and none where it does not.",
           "items": {
             "type": "string"
           },
@@ -5938,7 +5938,7 @@
     },
     "SessionChanged": {
       "additionalProperties": false,
-      "description": "`session/changed`: a notification a driver with its own door sends unasked.",
+      "description": "`session/changed`: a notification that a driver with its own door sends without a\nrequest.",
       "properties": {
         "external_id": {
           "description": "The conversation.",
@@ -5946,7 +5946,7 @@
         },
         "state": {
           "$ref": "#/$defs/LiveState",
-          "description": "Where it stands now."
+          "description": "Its state now."
         }
       },
       "required": [
@@ -5991,7 +5991,7 @@
         },
         "secret": {
           "default": false,
-          "description": "Kept in the runtime's private config folder and never shown again.",
+          "description": "The runtime keeps it in its private config folder and never shows it again.",
           "type": "boolean"
         }
       },
@@ -6003,14 +6003,14 @@
     },
     "Setup": {
       "additionalProperties": false,
-      "description": "`setup/plan`: what setting the harness up for Steery writes.",
+      "description": "`setup/plan`: what the runtime writes to configure the harness for Steery.",
       "properties": {
         "door": {
-          "description": "The runtime's loopback door URL, which a `plugin` door dials.",
+          "description": "The runtime's loopback door URL, which a `plugin` door connects to.",
           "type": "string"
         },
         "hook": {
-          "description": "The command line a hook runs; the hook's event is added as one more argument.",
+          "description": "The command line that a hook runs. The driver adds the hook's event as one more\nargument.",
           "type": "string"
         },
         "mcp_url": {
@@ -6026,13 +6026,13 @@
           "type": "string"
         },
         "timeout": {
-          "description": "The seconds an MCP entry gives one call.",
+          "description": "The seconds that an MCP entry gives one call.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "trusts": {
-          "description": "Folders a harness that runs only where a person trusted the folder may run in here,\ntrusted as that person would: those of a host an adapter made for its conversations,\nwhose terminal nobody opens to answer the harness's prompt. Empty on a person's own\ncomputer, where the person trusts a folder themselves.",
+          "description": "Folders where a harness can run here as if its person trusted them. This applies to\na harness that runs only in a folder that a person trusted. The folders are those of\na host that an adapter made for its conversations. Nobody opens the terminal of that\nhost to answer the harness's prompt. Empty on a person's own computer, where the\nperson trusts a folder themselves.",
           "items": {
             "type": "string"
           },
@@ -6051,20 +6051,20 @@
     },
     "SetupFacts": {
       "additionalProperties": false,
-      "description": "What setting a harness up and serving its MCP calls read.",
+      "description": "The facts for the setup of a harness and for its MCP calls.",
       "properties": {
         "call_bound": {
-          "description": "The longest the harness waits for one MCP call, in seconds, where no entry can\nlengthen it.",
+          "description": "The longest time that the harness waits for one MCP call, in seconds, when no entry can\nmake this time longer.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "cuts_tool_text": {
-          "description": "The harness cuts an MCP tool's description before its model reads it, so the\nescalation policies are said whole at `session_start`.",
+          "description": "The harness cuts the description of an MCP tool before its model reads it. So\n`session_start` gives the whole escalation policies.",
           "type": "boolean"
         },
         "reads_skills": {
-          "description": "The harness reads Steery's skill from the entry `setup/plan` lists; where false,\nthe MCP handshake carries the whole skill.",
+          "description": "True: the harness reads Steery's skill from the entry that `setup/plan` lists. False:\nthe MCP handshake carries the whole skill.",
           "type": "boolean"
         }
       },
@@ -6076,10 +6076,10 @@
     },
     "Signal": {
       "additionalProperties": false,
-      "description": "`process/signal`: signal a process, only where the pid still has that start time.",
+      "description": "`process/signal`: send a signal to a process, only where the pid still has that start time.",
       "properties": {
         "group": {
-          "description": "Signal its whole process group.",
+          "description": "Send the signal to its whole process group.",
           "type": "boolean"
         },
         "pid": {
@@ -6089,7 +6089,7 @@
           "type": "integer"
         },
         "process_start": {
-          "description": "Its start time, which the pid must still have.",
+          "description": "Its start time. The pid must still have this start time.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
@@ -6108,7 +6108,7 @@
       "type": "object"
     },
     "SignalName": {
-      "description": "A signal the runtime sends.",
+      "description": "A signal that the runtime sends.",
       "enum": [
         "int",
         "term",
@@ -6118,7 +6118,7 @@
       "type": "string"
     },
     "Source": {
-      "description": "What a host is made from.",
+      "description": "What an adapter makes a host from.",
       "oneOf": [
         {
           "additionalProperties": false,
@@ -6148,7 +6148,7 @@
         },
         {
           "additionalProperties": false,
-          "description": "A Dockerfile's whole text, which the vendor builds in its owner's account: the same\nbytes, the same build. Only where the adapter's facts say `builds`.",
+          "description": "The whole text of a Dockerfile. The vendor builds it in its owner's account. The same\nbytes give the same build. Only where the adapter's facts say `builds`.",
           "properties": {
             "dockerfile": {
               "type": "string"
@@ -6166,7 +6166,7 @@
       "description": "The runtime's answer to a moment or a settle.",
       "properties": {
         "say": {
-          "description": "A paragraph for the agent; after a settle, the plugin keeps the agent going with it.",
+          "description": "A paragraph for the agent. After a settle, the plugin uses it to make the agent continue.",
           "type": "string"
         }
       },
@@ -6185,7 +6185,7 @@
           "type": "string"
         },
         "external_id": {
-          "description": "The conversation continued or forked.",
+          "description": "The conversation that the turn continues or forks.",
           "type": "string"
         },
         "folder": {
@@ -6198,14 +6198,14 @@
         },
         "reads": {
           "default": [],
-          "description": "Folders outside `cwd` the turn reads.",
+          "description": "Folders outside `cwd` that the turn reads.",
           "items": {
             "type": "string"
           },
           "type": "array"
         },
         "thinking": {
-          "description": "How hard it thinks, in the harness's own word.",
+          "description": "The thinking level, in the harness's own word.",
           "type": "string"
         },
         "worktree": {
@@ -6223,7 +6223,7 @@
     },
     "Started": {
       "additionalProperties": false,
-      "description": "The process `process/start` started.",
+      "description": "The process that `process/start` started.",
       "properties": {
         "pid": {
           "description": "Its pid.",
@@ -6246,7 +6246,7 @@
     },
     "Stat": {
       "additionalProperties": false,
-      "description": "What is at a path. A link is not followed.",
+      "description": "What is at a path. `serve` does not follow a link.",
       "properties": {
         "dev": {
           "format": "uint64",
@@ -6262,7 +6262,7 @@
           "$ref": "#/$defs/FileKind"
         },
         "mode": {
-          "description": "Its Unix mode bits.",
+          "description": "The Unix mode bits.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
@@ -6304,7 +6304,7 @@
     },
     "Status": {
       "additionalProperties": false,
-      "description": "Where a service stands.",
+      "description": "The state of a service.",
       "properties": {
         "granted": {
           "description": "The percent of one core the computer grants the runtime's user.",
@@ -6317,7 +6317,7 @@
           "type": "boolean"
         },
         "pid": {
-          "description": "The process it runs as.",
+          "description": "The process that the service runs as.",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
@@ -6328,7 +6328,7 @@
           "type": "integer"
         },
         "running": {
-          "description": "Its manager runs it.",
+          "description": "The service manager runs it.",
           "type": "boolean"
         }
       },
@@ -6354,14 +6354,14 @@
         },
         {
           "const": "held",
-          "description": "Nothing, and no end: the process takes its words through its live door and runs\nuntil stopped.",
+          "description": "Nothing, and no end: the process takes its words through its live door and runs\nuntil something stops it.",
           "type": "string"
         }
       ]
     },
     "Stop": {
       "additionalProperties": false,
-      "description": "`stop`: the harness's own way to end a turn; the runtime's signals come after.",
+      "description": "`stop`: the harness's own way to end a turn. The runtime's signals come after it.",
       "properties": {
         "external_id": {
           "description": "The conversation.",
@@ -6372,7 +6372,7 @@
           "description": "Who holds it, as `held` said."
         },
         "say": {
-          "description": "The `id` of a `say` (version 7): stop only the turn its words began, and refuse\n`other-turn` where the turn running is another. Absent: the person's stop.",
+          "description": "The `id` of a `say` (version 7). Stop only the turn that its words began. Refuse\n`other-turn` where another turn runs. Absent: the person's stop.",
           "type": "string"
         }
       },
@@ -6384,14 +6384,14 @@
     },
     "Stopped": {
       "additionalProperties": false,
-      "description": "What `stop`'s graceful step did.",
+      "description": "What the graceful step of `stop` did.",
       "properties": {
         "proof": {
           "description": "The driver's one line of evidence: the turn it ended and the state it reached.",
           "type": "string"
         },
         "stopped": {
-          "description": "This step ended the turn. For a `process` holder the runtime signals it after,\nwherever it still runs, whatever this says.",
+          "description": "This step ended the turn. For a `process` holder, the runtime signals the process\nafter this step where it still runs, whatever this field says.",
           "type": "boolean"
         }
       },
@@ -6424,7 +6424,7 @@
     },
     "StreamClosed": {
       "additionalProperties": false,
-      "description": "`stream/closed`: a channel ended, as the adapter says.",
+      "description": "`stream/closed`: the adapter says that a channel ended.",
       "properties": {
         "exit": {
           "description": "The command's exit code, where it has one.",
@@ -6443,7 +6443,7 @@
     },
     "StreamData": {
       "additionalProperties": false,
-      "description": "`stream/data`: the command's bytes, as the adapter sends them.",
+      "description": "`stream/data`: the bytes of the command, which the adapter sends.",
       "properties": {
         "bytes": {
           "description": "The bytes, base64.",
@@ -6462,7 +6462,7 @@
     },
     "StreamWrite": {
       "additionalProperties": false,
-      "description": "`stream/write`: the runtime's bytes for a channel.",
+      "description": "`stream/write`: the bytes that the runtime sends to a channel.",
       "properties": {
         "bytes": {
           "description": "The bytes, base64.",
@@ -6481,7 +6481,7 @@
     },
     "SubAgent": {
       "additionalProperties": false,
-      "description": "A sub-agent working in a conversation.",
+      "description": "A sub-agent that works in a conversation.",
       "properties": {
         "external_id": {
           "description": "The harness's id for it.",
@@ -6506,7 +6506,7 @@
           "type": "string"
         },
         "task": {
-          "description": "The first line of what it was asked.",
+          "description": "The first line of the task that it got.",
           "type": "string"
         },
         "transcripts": {
@@ -6528,7 +6528,7 @@
       "description": "One of the harness's own ways to allow such calls from now on, as a person reads it.",
       "properties": {
         "about": {
-          "description": "One line on how far it reaches: `this project, for you`.",
+          "description": "One line about its scope: `this project, for you`.",
           "type": "string"
         },
         "label": {
@@ -6591,7 +6591,7 @@
     },
     "TerminalCommand": {
       "additionalProperties": false,
-      "description": "The command `terminal` gave.",
+      "description": "The command that `terminal` gave.",
       "properties": {
         "app": {
           "description": "The URL that opens it in the harness's app.",
@@ -6637,22 +6637,22 @@
           "description": "How the turn ends, unless a later line says otherwise."
         },
         "events": {
-          "description": "The events of the named conversation this line says, each under the id\n`sessions/read` gives the same fact.",
+          "description": "The events of the named conversation that this line gives. Each has the id that\n`sessions/read` gives the same fact.",
           "items": {
             "$ref": "#/$defs/Event"
           },
           "type": "array"
         },
         "named": {
-          "description": "The conversation the harness named.",
+          "description": "The conversation that the harness named.",
           "type": "string"
         },
         "refused": {
-          "description": "The refusal word a line of standard error means.",
+          "description": "The refusal word that a line of standard error means.",
           "type": "string"
         },
         "title": {
-          "description": "The title the harness gave the named conversation.",
+          "description": "The title that the harness gave the named conversation.",
           "type": "string"
         },
         "took": {
@@ -6664,10 +6664,10 @@
     },
     "TurnRead": {
       "additionalProperties": false,
-      "description": "`turn/read`: one line a turn's process wrote.",
+      "description": "`turn/read`: one line that a turn's process wrote.",
       "properties": {
         "delivery": {
-          "description": "The delivery marker's name the runtime put in the words.",
+          "description": "The name of the delivery marker that the runtime put in the words.",
           "type": "string"
         },
         "line": {
@@ -6679,7 +6679,7 @@
           "description": "The stream it came on."
         },
         "turn": {
-          "description": "The run the line belongs to; a driver may keep state across its lines.",
+          "description": "The run that the line belongs to. A driver can keep state across its lines.",
           "type": "string"
         }
       },
@@ -6702,14 +6702,14 @@
         },
         {
           "const": "interrupted",
-          "description": "The harness wrote no end and its process is gone, or it was stopped.",
+          "description": "The harness wrote no end and its process is gone, or something stopped it.",
           "type": "string"
         }
       ]
     },
     "Unlisted": {
       "additionalProperties": false,
-      "description": "What a model a harness does not list takes.",
+      "description": "What a model takes when the harness does not list it.",
       "properties": {
         "thinking": {
           "description": "Its thinking levels, in the harness's own words.",
@@ -6726,13 +6726,13 @@
     },
     "Values": {
       "additionalProperties": false,
-      "description": "The variables `process/environ` read.",
+      "description": "The variables that `process/environ` read.",
       "properties": {
         "values": {
           "additionalProperties": {
             "type": "string"
           },
-          "description": "Each one set, by name; one not set is absent.",
+          "description": "Each variable that has a value, by name. A variable with no value is absent.",
           "type": "object"
         }
       },
@@ -6771,12 +6771,12 @@
         },
         {
           "const": "thought",
-          "description": "Its reasoning or progress, where the harness writes it as text.",
+          "description": "The agent's reasoning or progress, where the harness writes it as text.",
           "type": "string"
         },
         {
           "const": "tool",
-          "description": "The text of a call's result, given after its `call_ended`; a call's input is `call_began.call.input` and is never repeated as words.",
+          "description": "The text of a call's result, after its `call_ended`. The input of a call is in\n`call_began.call.input`, and the driver never repeats it as words.",
           "type": "string"
         },
         {
@@ -6795,20 +6795,20 @@
           "type": "string"
         },
         "ends_at": {
-          "description": "When what it holds ends (a sign-in started for it), in milliseconds since 1970 (§2).",
+          "description": "When the state that this way holds ends (for example, a sign-in that the driver\nstarted for it), in milliseconds since 1970 (§2).",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
         },
         "fields": {
-          "description": "What its person types, each given back by its `name`.",
+          "description": "The values that the person types. The runtime gives each one back by its `name`.",
           "items": {
             "$ref": "#/$defs/Field"
           },
           "type": "array"
         },
         "id": {
-          "description": "The same for this way of its need in every plan (`api-key`).",
+          "description": "The id of this way of its need, the same in every plan (`api-key`).",
           "type": "string"
         },
         "label": {
@@ -6821,7 +6821,7 @@
               "$ref": "#/$defs/NeedLink"
             }
           ],
-          "description": "The page its person opens first: where a key is made, or an authorize page."
+          "description": "The page that the person opens first: the page that makes a key, or an authorize\npage."
         }
       },
       "required": [

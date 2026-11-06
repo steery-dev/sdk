@@ -100,10 +100,15 @@ impl Program for Example {
             }
             method::SESSIONS_LIST => {
                 let _: harness::List = params(given)?;
+                // Whole every time: a driver that keeps its listings gives each a cursor and
+                // answers a call's `after` with only what changed (`steery_sdk::listing`).
                 result(harness::Listed {
                     sessions: self.list(),
                     excluded: Vec::new(),
                     complete: true,
+                    cursor: None,
+                    after: None,
+                    gone: Vec::new(),
                 })
             }
             method::SESSIONS_LOCATE => {

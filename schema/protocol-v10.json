@@ -3076,6 +3076,10 @@
       "additionalProperties": false,
       "description": "`sessions/list`: the harness's conversations.",
       "properties": {
+        "after": {
+          "description": "The `cursor` of an earlier answer: answer only what changed since that listing\n(version 10).",
+          "type": "string"
+        },
         "seen_since": {
           "description": "Only the conversations that changed since this time.",
           "format": "uint64",
@@ -3097,20 +3101,35 @@
       "additionalProperties": false,
       "description": "The conversations `sessions/list` found.",
       "properties": {
+        "after": {
+          "description": "The `after` of the call: this answer gives only what changed since that listing.\nAbsent: it gives everything (version 10).",
+          "type": "string"
+        },
         "complete": {
           "description": "True when no file names its conversation ambiguously. Then a conversation that is\nnot in the list is gone.",
           "type": "boolean"
         },
+        "cursor": {
+          "description": "The name of this listing, for the `after` of the next call (version 10).",
+          "type": "string"
+        },
         "excluded": {
           "default": [],
-          "description": "Ids where no transcript is a conversation: for example, a sub-agent or a run with no\nperson.",
+          "description": "Ids where no transcript is a conversation: for example, a sub-agent or a run with no\nperson. With `after`: each one that was not excluded in that listing.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "gone": {
+          "description": "With `after`: the ids that the listing of `after` had, as a conversation or as\nexcluded, and that this listing has as neither (version 10).",
           "items": {
             "type": "string"
           },
           "type": "array"
         },
         "sessions": {
-          "description": "Each one.",
+          "description": "Each one. With `after`: each one that is new or changed since that listing.",
           "items": {
             "$ref": "#/$defs/Session"
           },
@@ -6831,7 +6850,7 @@
       "type": "object"
     }
   },
-  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v9.json",
+  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v10.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "anyOf": [
     {
@@ -7486,6 +7505,6 @@
       "$ref": "#/$defs/Way"
     }
   ],
-  "description": "Every shape of the Steery program protocol, version 9 (PROTOCOL.md), and the release manifest programs are published by.",
+  "description": "Every shape of the Steery program protocol, version 10 (PROTOCOL.md), and the release manifest programs are published by.",
   "title": "Protocol"
 }

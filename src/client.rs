@@ -443,8 +443,43 @@ mod tests {
         ("files", None),
     ];
 
-    /// A driver whose harness loads the servers [`URLS`] names, and in a folder one more.
-    struct Lister;
+    /// A driver whose harness loads the servers [`URLS`] names, and in a folder one more;
+    /// and whose conversations change after its first listing ([`Lister::conversations`]).
+    #[derive(Default)]
+    struct Lister {
+        listed: std::sync::atomic::AtomicUsize,
+        changes: crate::listing::Changes,
+    }
+
+    impl Lister {
+        /// Its conversations at its `n`th listing: `a` and `b` first; from then on `a`
+        /// changed, `b` gone, `c` new and `x` excluded.
+        fn conversations(n: usize) -> wire::harness::Listed {
+            let session = |id: &str, updated_at: u64| wire::harness::Session {
+                external_id: id.into(),
+                cwd: None,
+                title: None,
+                created_at: None,
+                updated_at,
+                transcripts: vec![format!("/home/a/.lister/{id}.jsonl").into()],
+                parent: None,
+                app: false,
+                sub_agents: Vec::new(),
+            };
+            let (sessions, excluded) = match n {
+                0 => (vec![session("a", 1), session("b", 1)], Vec::new()),
+                _ => (vec![session("a", 2), session("c", 2)], vec!["x".into()]),
+            };
+            wire::harness::Listed {
+                sessions,
+                excluded,
+                complete: true,
+                cursor: None,
+                after: None,
+                gone: Vec::new(),
+            }
+        }
+    }
 
     impl crate::Program for Lister {
         fn initialize(
@@ -453,6 +488,7 @@ mod tests {
         ) -> Result<wire::Initialized, crate::Error> {
             let protocol = crate::pick(&params.protocol)
                 .ok_or_else(|| crate::Error::invalid("no protocol this driver speaks"))?;
+            self.changes.picked(protocol);
             Ok(wire::Initialized {
                 protocol,
                 program: wire::ProgramInfo {
@@ -505,6 +541,12 @@ mod tests {
         }
 
         async fn call(&self, method: &str, params: Value) -> Result<Value, crate::Error> {
+            if method == method::SESSIONS_LIST {
+                let asked: wire::harness::List = crate::params(params)?;
+                let whole = Self::conversations(self.listed.fetch_add(1, Ordering::SeqCst));
+                let answer = self.changes.answer(asked.after.as_deref(), whole);
+                return crate::result(answer);
+            }
             if method != method::MCP_LIST {
                 return Err(crate::Error::Unknown);
             }
@@ -530,16 +572,19 @@ mod tests {
     /// The runtime offers 3 and 4: a program on this crate picks 4 and answers `mcp/list`
     /// with each server's name and its URL bare, or no URL where its host cannot be told
     /// from a password. Offered 3 alone it picks 3, and the client never sends `mcp/list`
-    /// to it; offered neither, it is refused.
+    /// to it; offered neither, it is refused. Offered 10, it names each listing, and given
+    /// a listing's cursor it answers only what changed since: the whole listing read back
+    /// from that is the one it would give whole. Offered less, it lists whole and names
+    /// nothing.
     #[tokio::test]
-    async fn a_program_offered_4_lists_its_mcp_servers_and_one_offered_3_is_never_asked() {
+    async fn a_program_answers_what_its_version_has_and_is_never_asked_what_it_has_not() {
         if std::env::var_os(PROGRAM).is_some() {
-            let served = crate::serve(|_notifier| Lister).await;
+            let served = crate::serve(|_notifier| Lister::default()).await;
             std::process::exit(i32::from(served.is_err()));
         }
         let start = || async {
             let program = std::env::current_exe().unwrap();
-            let this = "client::tests::a_program_offered_4_lists_its_mcp_servers_and_one_offered_3_is_never_asked";
+            let this = "client::tests::a_program_answers_what_its_version_has_and_is_never_asked_what_it_has_not";
             Client::spawn(
                 Path::new("env"),
                 &[
@@ -615,6 +660,76 @@ mod tests {
         );
         new.shutdown().await.unwrap();
 
+        let lists = start().await;
+        let initialized = lists
+            .initialize(&offer(crate::PROTOCOLS.to_vec()))
+            .await
+            .unwrap();
+        assert_eq!(initialized.protocol, crate::LIST_CHANGES);
+        let first = lists
+            .ask::<method::SessionsList>(&wire::harness::List::default())
+            .await
+            .unwrap();
+        assert_eq!(first.after, None);
+        let ids = |listed: &wire::harness::Listed| -> Vec<(String, u64)> {
+            listed
+                .sessions
+                .iter()
+                .map(|session| (session.external_id.clone(), session.updated_at))
+                .collect()
+        };
+        assert_eq!(ids(&first), [("a".into(), 1), ("b".into(), 1)]);
+        let changed = lists
+            .ask::<method::SessionsList>(&wire::harness::List {
+                after: first.cursor.clone(),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        assert!(first.cursor.is_some());
+        assert_eq!(changed.after, first.cursor);
+        assert_eq!(ids(&changed), [("a".into(), 2), ("c".into(), 2)]);
+        assert_eq!(changed.excluded, ["x"]);
+        assert_eq!(changed.gone, ["b"]);
+        let read_back = first.clone().then(changed.clone()).unwrap();
+        let whole = Lister::conversations(1);
+        assert_eq!(
+            (ids(&read_back), &read_back.excluded, read_back.complete),
+            (ids(&whole), &whole.excluded, whole.complete)
+        );
+        assert_eq!(read_back.cursor, changed.cursor);
+        // Changes since the newest listing: none.
+        let same = lists
+            .ask::<method::SessionsList>(&wire::harness::List {
+                after: changed.cursor.clone(),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        assert_eq!(
+            (same.sessions.len(), same.excluded.len(), same.gone.len()),
+            (0, 0, 0)
+        );
+        assert_eq!(
+            read_back.clone().then(same).unwrap().sessions,
+            read_back.sessions
+        );
+        // A cursor it never gave: whole, and never read onto another listing.
+        let unknown = lists
+            .ask::<method::SessionsList>(&wire::harness::List {
+                after: Some("another-process-7".into()),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        assert_eq!(unknown.after, None);
+        assert_eq!(ids(&unknown), ids(&whole));
+        assert_eq!(
+            first.then(changed.clone()).map(|l| l.cursor),
+            Some(changed.cursor)
+        );
+        lists.shutdown().await.unwrap();
+
         let old = start().await;
         let initialized = old.initialize(&offer(vec![3])).await.unwrap();
         assert_eq!(initialized.protocol, 3);
@@ -622,6 +737,11 @@ mod tests {
             .ask::<method::McpList>(&wire::harness::McpList { cwd: None })
             .await;
         assert!(matches!(asked, Err(CallError::Unknown)), "{asked:?}");
+        let whole = old
+            .ask::<method::SessionsList>(&wire::harness::List::default())
+            .await
+            .unwrap();
+        assert_eq!((whole.cursor, whole.after), (None, None));
         old.shutdown().await.unwrap();
 
         let none = start().await;

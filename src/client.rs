@@ -447,9 +447,8 @@ mod tests {
     /// and whose conversations change after its first listing ([`Lister::conversations`]).
     #[derive(Default)]
     struct Lister {
-        picked: std::sync::atomic::AtomicU32,
         listed: std::sync::atomic::AtomicUsize,
-        changes: Mutex<crate::listing::Changes>,
+        changes: crate::listing::Changes,
     }
 
     impl Lister {
@@ -489,7 +488,7 @@ mod tests {
         ) -> Result<wire::Initialized, crate::Error> {
             let protocol = crate::pick(&params.protocol)
                 .ok_or_else(|| crate::Error::invalid("no protocol this driver speaks"))?;
-            self.picked.store(protocol, Ordering::SeqCst);
+            self.changes.picked(protocol);
             Ok(wire::Initialized {
                 protocol,
                 program: wire::ProgramInfo {
@@ -545,11 +544,7 @@ mod tests {
             if method == method::SESSIONS_LIST {
                 let asked: wire::harness::List = crate::params(params)?;
                 let whole = Self::conversations(self.listed.fetch_add(1, Ordering::SeqCst));
-                let answer = self
-                    .changes
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner())
-                    .answer(self.picked.load(Ordering::SeqCst), &asked, whole);
+                let answer = self.changes.answer(asked.after.as_deref(), whole);
                 return crate::result(answer);
             }
             if method != method::MCP_LIST {

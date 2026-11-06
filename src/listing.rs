@@ -6,9 +6,11 @@
 use std::collections::hash_map::DefaultHasher;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::{Hash, Hasher};
+use std::sync::Mutex;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::wire::harness::{List, Listed, Session};
+use crate::wire::harness::{Listed, Session};
 
 /// How many of its own listings a driver keeps, so that a call with `after` can be answered
 /// with only what changed. The runtime's sweeps follow one cursor; other callers ask whole,
@@ -16,20 +18,27 @@ use crate::wire::harness::{List, Listed, Session};
 const KEEPS: usize = 4;
 
 /// The listings that a driver answered, by their cursors: what it needs to give the next
-/// call only what changed. Keep one for the life of the driver's process, and give it each
-/// whole listing ([`Changes::answer`]).
+/// call only what changed. A driver keeps one for the life of its process, says the
+/// protocol that it picked ([`Changes::picked`]), and gives it each whole listing
+/// ([`Changes::answer`]).
 pub struct Changes {
     /// This process's own part of each cursor, so that a driver that started again never
     /// reads a cursor of the process before it.
     run: String,
-    /// The number of the next listing.
+    /// The protocol that the driver picked; 0 until it says.
+    protocol: AtomicU32,
+    kept: Mutex<Kept>,
+}
+
+/// The number of the next listing, and the newest listings, oldest first.
+#[derive(Default)]
+struct Kept {
     next: u64,
-    /// The newest listings, oldest first.
-    kept: VecDeque<(String, Kept)>,
+    listings: VecDeque<(String, Seen)>,
 }
 
 /// What a listing had: each conversation's fingerprint by its id, and the excluded ids.
-struct Kept {
+struct Seen {
     sessions: HashMap<String, u64>,
     excluded: HashSet<String>,
 }
@@ -41,23 +50,28 @@ impl Default for Changes {
             .map_or(0, |since| since.as_nanos());
         Self {
             run: format!("{:x}-{started:x}", std::process::id()),
-            next: 0,
-            kept: VecDeque::new(),
+            protocol: AtomicU32::new(0),
+            kept: Mutex::default(),
         }
     }
 }
 
 impl Changes {
-    /// The answer to `list` of a driver that picked `protocol`, from `whole`, everything
-    /// that the driver lists now for it. From version [`crate::LIST_CHANGES`] on, the answer
-    /// names itself by a cursor. Where `list.after` names a listing that this keeps, the
-    /// answer gives only what changed since it; otherwise it gives everything. Before that
-    /// version it is `whole`, as it is.
-    pub fn answer(&mut self, protocol: u32, list: &List, whole: Listed) -> Listed {
-        if protocol < crate::LIST_CHANGES {
+    /// The protocol that the driver picked in `initialize`.
+    pub fn picked(&self, protocol: u32) {
+        self.protocol.store(protocol, Ordering::SeqCst);
+    }
+
+    /// The answer to a `sessions/list` with `after`, from `whole`, everything that the driver
+    /// lists now for that call. From version [`crate::LIST_CHANGES`] on, the answer names
+    /// itself by a cursor. Where `after` names a listing that this keeps, the answer gives
+    /// only what changed since it; otherwise it gives everything. Before that version, or
+    /// before the driver said what it picked, it is `whole`, as it is.
+    pub fn answer(&self, after: Option<&str>, whole: Listed) -> Listed {
+        if self.protocol.load(Ordering::SeqCst) < crate::LIST_CHANGES {
             return whole;
         }
-        let now = Kept {
+        let now = Seen {
             sessions: whole
                 .sessions
                 .iter()
@@ -65,12 +79,10 @@ impl Changes {
                 .collect(),
             excluded: whole.excluded.iter().cloned().collect(),
         };
-        let cursor = format!("{}-{}", self.run, self.next);
-        self.next += 1;
-        let was = list
-            .after
-            .as_ref()
-            .and_then(|after| self.kept.iter().find(|(cursor, _)| cursor == after));
+        let mut kept = self.kept.lock().unwrap_or_else(|e| e.into_inner());
+        let cursor = format!("{}-{}", self.run, kept.next);
+        kept.next += 1;
+        let was = after.and_then(|after| kept.listings.iter().find(|(cursor, _)| cursor == after));
         let answer = match was {
             Some((after, was)) => {
                 let mut gone: Vec<String> = was
@@ -109,9 +121,9 @@ impl Changes {
                 ..whole
             },
         };
-        self.kept.push_back((cursor, now));
-        while self.kept.len() > KEEPS {
-            self.kept.pop_front();
+        kept.listings.push_back((cursor, now));
+        while kept.listings.len() > KEEPS {
+            kept.listings.pop_front();
         }
         answer
     }

@@ -14,6 +14,7 @@
 
 pub mod client;
 mod frame;
+pub mod listing;
 pub mod release;
 pub mod wire;
 
@@ -34,9 +35,10 @@ use tokio::sync::mpsc;
 /// - 7 is 6 with say ids (`say`'s `id`, `stop`'s `say`).
 /// - 8 is 7 with `identity.call_meta`.
 /// - 9 is 8 with a harness's `lines` and `hosted`.
+/// - 10 is 9 with `sessions/list`'s `after`, `cursor` and `gone`.
 ///
 /// A program answers with the newest of these that the runtime offers.
-pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7, 8, 9];
+pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7, 8, 9, 10];
 
 /// The first version in which `say` has an `id` and `stop` can name one (PROTOCOL.md §4.2,
 /// §4.3). The runtime gives neither to a program that picked an older version.
@@ -49,6 +51,12 @@ pub const CALL_META: u32 = 8;
 /// The first version in which a harness can give `lines` and `hosted` (PROTOCOL.md §3.1).
 /// A driver that picked an older version gives neither.
 pub const LINES_HOSTED: u32 = 9;
+
+/// The first version in which `sessions/list` takes `after` and answers `cursor`, `after`
+/// and `gone` (PROTOCOL.md §4.1): an answer that gives only what changed since an earlier
+/// listing ([`listing`]). The runtime gives no `after` to a driver that picked an older
+/// version, and that driver answers none of the three.
+pub const LIST_CHANGES: u32 = 10;
 
 /// The version that a program answers `initialize` with: the newest of [`PROTOCOLS`] in
 /// `offered`. None when the runtime offers none of them.

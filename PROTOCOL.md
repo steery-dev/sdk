@@ -1,10 +1,10 @@
-# The program protocol, version 9
+# The program protocol, version 10
 
 This document is the one contract between Steery's runtime (`steery`) and every **driver**
 and **adapter**. It is also the contract between the control of the runtime and a remote
 host (§6). It is published under MIT in [steery-dev/sdk](https://github.com/steery-dev/sdk)
 with `steery-sdk`, the Rust crate that implements it. It is also published with the JSON
-Schema [`schema/protocol-v9.json`](schema/protocol-v9.json), which holds every shape below.
+Schema [`schema/protocol-v10.json`](schema/protocol-v10.json), which holds every shape below.
 Steery's own drivers ([steery-dev/drivers](https://github.com/steery-dev/drivers)) and
 adapters ([steery-dev/adapters](https://github.com/steery-dev/adapters)) are programs like
 any other. The runtime knows no program by its id, and every program is added in the same
@@ -363,7 +363,7 @@ A driver answers the methods of its levels. A method that its facts rule out is 
 | Method | Params | Result |
 |---|---|---|
 | `setup/plan` | `{mcp_url, skill, hook, door, release, timeout, trusts?}` | `{found?: Found, refused?, entries: [Entry], notes: [string], install?: {argv, about}, needs?: [Need]}` (`needs`: version 5) |
-| `sessions/list` | `{seen_since?, transcripts: [path]}` | `{sessions: [Session], excluded: [string], complete}` |
+| `sessions/list` | `{seen_since?, transcripts: [path], after?}` | `{sessions: [Session], excluded: [string], complete, cursor?, after?, gone?: [string]}` |
 | `sessions/locate` | `{external_id}` | `{session: Session}`; refused `not-found` |
 | `sessions/read` | `{external_id, sub_agent?, cursor?, tail?}` | `{cursor, events: [Event], more, reset, whole, after?}`; refused `not-found`, `refused` |
 | `sessions/fold` | `{external_id, sub_agent?, cursor?, records: [Record], quiet}` | `{cursor, events: [Event], consumed}`; refused `selection-unsupported` |
@@ -533,6 +533,25 @@ at it (a headless run, a program that drives the agent). `excluded` names the id
 every transcript is one of those. Thus the runtime does not read a missing one as gone.
 `complete` is false where some file named its conversation ambiguously. A conversation
 absent from a complete listing is gone.
+
+**Changes only** (version 10). A driver can name each listing that it answers by a
+`cursor`. The runtime then gives that cursor as `after` in its next call. The answer to that
+call gives only what changed since the listing of `after`. The whole listing is that
+listing with these changes:
+
+- `sessions`: each conversation that is new or that the driver lists otherwise now.
+- `excluded`: each id that it excludes now and did not exclude then.
+- `gone`: each id that it listed then, as a conversation or as excluded, and that it lists
+  now as neither. A conversation that is now older than `seen_since` is gone too.
+- `complete` says the same of the whole listing as it does without `after`.
+- `after` is the `after` of the call. It says that the answer gives only what changed.
+
+A driver that does not keep the listing of `after` answers with the whole listing, without
+`after`: for example, a driver that started again. Every answer of a driver that names its
+listings has a `cursor`, the one of a whole listing too. A driver that names none answers
+each call whole. The runtime gives `after` only to a driver that picked version 10 or newer,
+and only a cursor that driver gave. `steery_sdk::listing` holds both halves: a driver's
+`Changes`, and the runtime's `Listed::then`.
 
 **`sessions/locate`** answers one conversation by its id, however old it is.
 
@@ -1680,12 +1699,15 @@ Records go in batches of at most 8 MiB (`door::RECORDS_MAX`). This bound applies
 
 ## 10. Versions
 
-This is version 9. Its shapes are strict (§2): a program or a runtime rejects a field that it
+This is version 10. Its shapes are strict (§2): a program or a runtime rejects a field that it
 does not know. Thus any change to a shape, a method, a word or a meaning gets a new protocol
 number. It is never an extension of this version. The runtime offers every number that it
 speaks, and the program picks one. The major version of `steery-sdk` is the protocol that it
 speaks. `steery-sdk` speaks every version that is still offered (`steery_sdk::PROTOCOLS`).
 
+- **Version 10** is version 9 with changes-only listings: `sessions/list`'s `after`, and its
+  answer's `cursor`, `after` and `gone` (§4.1). Nothing else changed. A driver that picked 9
+  or older gets no `after` and gives none of the three fields. It answers each listing whole.
 - **Version 9** is version 8 with two fields of a harness, `lines` and `hosted` (§3.1).
   Nothing else changed. A driver that picked 8 or older gives neither field. Its agent
   writes its lines, and the agent gets Steery's own spellings.

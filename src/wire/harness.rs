@@ -337,6 +337,10 @@ pub struct List {
     /// folders.
     #[serde(default)]
     pub transcripts: Vec<PathBuf>,
+    /// The `cursor` of an earlier answer: answer only what changed since that listing
+    /// (version 10).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub after: Option<String>,
 }
 
 /// The conversations `sessions/list` found.
@@ -344,19 +348,30 @@ pub struct List {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Listed {
-    /// Each one.
+    /// Each one. With `after`: each one that is new or changed since that listing.
     pub sessions: Vec<Session>,
     /// Ids where no transcript is a conversation: for example, a sub-agent or a run with no
-    /// person.
+    /// person. With `after`: each one that was not excluded in that listing.
     #[serde(default)]
     pub excluded: Vec<String>,
     /// True when no file names its conversation ambiguously. Then a conversation that is
     /// not in the list is gone.
     pub complete: bool,
+    /// The name of this listing, for the `after` of the next call (version 10).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+    /// The `after` of the call: this answer gives only what changed since that listing.
+    /// Absent: it gives everything (version 10).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub after: Option<String>,
+    /// With `after`: the ids that the listing of `after` had, as a conversation or as
+    /// excluded, and that this listing has as neither (version 10).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub gone: Vec<String>,
 }
 
 /// One conversation in the harness's store.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Session {
@@ -388,7 +403,7 @@ pub struct Session {
 }
 
 /// A sub-agent that works in a conversation.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct SubAgent {

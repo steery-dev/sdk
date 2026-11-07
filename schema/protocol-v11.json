@@ -187,24 +187,6 @@
         },
         {
           "additionalProperties": false,
-          "description": "The state of the conversation, in the words of its own model. The copy answers with\n[`super::harness::Text`].",
-          "properties": {
-            "id": {
-              "type": "string"
-            },
-            "op": {
-              "const": "recap",
-              "type": "string"
-            }
-          },
-          "required": [
-            "op",
-            "id"
-          ],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
           "description": "Forget everything before a cut, and keep `summary` in its place. The copy answers with\n[`DoorCompacted`].",
           "properties": {
             "before": {
@@ -5282,25 +5264,6 @@
       ],
       "type": "string"
     },
-    "Recap": {
-      "additionalProperties": false,
-      "description": "`recap`: the conversation's own model describes its state. Its answer is a [`Text`].",
-      "properties": {
-        "asked": {
-          "description": "What Steery asks the model.",
-          "type": "string"
-        },
-        "external_id": {
-          "description": "The conversation.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "external_id",
-        "asked"
-      ],
-      "type": "object"
-    },
     "Receipt": {
       "additionalProperties": false,
       "description": "What `receipt/find` found.",
@@ -5551,23 +5514,6 @@
                 "op",
                 "id",
                 "say"
-              ],
-              "type": "object"
-            },
-            {
-              "description": "The state of the conversation, in the words of its own model. The copy answers with\n[`super::harness::Text`].",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "op": {
-                  "const": "recap",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "op",
-                "id"
               ],
               "type": "object"
             },
@@ -6632,7 +6578,7 @@
     },
     "Text": {
       "additionalProperties": false,
-      "description": "A reader's answer, or a recap's.",
+      "description": "A reader's answer.",
       "properties": {
         "text": {
           "type": "string"
@@ -6850,7 +6796,7 @@
       "type": "object"
     }
   },
-  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v10.json",
+  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v11.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "anyOf": [
     {
@@ -7338,9 +7284,6 @@
     },
     {
       "$ref": "#/$defs/ReaderTools"
-    },
-    {
-      "$ref": "#/$defs/Recap"
     },
     {
       "$ref": "#/$defs/Receipt"

@@ -281,9 +281,6 @@ pub enum Ask {
     ///
     /// The copy answers with [`DoorStopped`].
     Force { id: String, say: String },
-    /// The state of the conversation, in the words of its own model. The copy answers with
-    /// [`super::harness::Text`].
-    Recap { id: String },
     /// Forget everything before a cut, and keep `summary` in its place. The copy answers with
     /// [`DoorCompacted`].
     Compact { id: String, before: u64, summary: String, least: u64 },

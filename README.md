@@ -98,6 +98,20 @@ steery programs add https://github.com/<you>/<repo>
 The hosts that an adapter makes run a Linux build for `x86_64-unknown-linux-gnu`. Publish one.
 Then your driver works in the hosts of Daytona and of every other cloud vendor.
 
+## Releasing the SDK
+
+Raise `version` in `Cargo.toml` in a pull request. Once it merges, run this from a clean
+checkout of that commit of `main`:
+
+```sh
+./release.sh
+```
+
+It tags the commit `v<version>` and pushes the tag. It records the release on Steery's
+`sdk-releases` train: `build` as it starts, then `shipped`, or `failed` with the step that
+stopped it. Steery's `release-of-commit` reads that train to say which release first carries a
+commit. It needs `steery` signed in to the `steery-dev` workspace.
+
 ## Licence
 
 MIT.

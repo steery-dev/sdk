@@ -129,8 +129,6 @@ requests! {
     Say, SAY = "say": harness::Say => harness::Said, seconds(10), [NO_DOOR, NO_ANSWER, HARNESS_BUSY, REFUSED];
     /// A model or thinking level for a live conversation (§4.3).
     Pick, PICK = "pick": harness::Pick => harness::Picked, seconds(10), [MODEL_MISSING, SELECTION_UNSUPPORTED];
-    /// A recap that the model of the conversation writes (§4.3).
-    Recap, RECAP = "recap": harness::Recap => harness::Text, seconds(40), [NO_ANSWER, MODEL_MISSING];
 
     /// Start a process detached (§5.1).
     ProcessStart, PROCESS_START = "process/start": process::Start => process::Started, seconds(5), [START_FAILED];

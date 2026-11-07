@@ -665,7 +665,8 @@ mod tests {
             .initialize(&offer(crate::PROTOCOLS.to_vec()))
             .await
             .unwrap();
-        assert_eq!(initialized.protocol, crate::LIST_CHANGES);
+        assert_eq!(Some(&initialized.protocol), crate::PROTOCOLS.last());
+        assert!(initialized.protocol >= crate::LIST_CHANGES);
         let first = lists
             .ask::<method::SessionsList>(&wire::harness::List::default())
             .await

@@ -36,9 +36,10 @@ use tokio::sync::mpsc;
 /// - 8 is 7 with `identity.call_meta`.
 /// - 9 is 8 with a harness's `lines` and `hosted`.
 /// - 10 is 9 with `sessions/list`'s `after`, `cursor` and `gone`.
+/// - 11 is 10 without `recap`, which no supported runtime asks.
 ///
 /// A program answers with the newest of these that the runtime offers.
-pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7, 8, 9, 10];
+pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7, 8, 9, 10, 11];
 
 /// The first version in which `say` has an `id` and `stop` can name one (PROTOCOL.md §4.2,
 /// §4.3). The runtime gives neither to a program that picked an older version.

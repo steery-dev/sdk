@@ -1689,7 +1689,7 @@ pub struct ReaderRead {
     pub output: String,
 }
 
-/// A reader's answer, or a recap's.
+/// A reader's answer.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
@@ -1792,17 +1792,6 @@ pub struct Picked {
     pub model: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thinking: Option<String>,
-}
-
-/// `recap`: the conversation's own model describes its state. Its answer is a [`Text`].
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[serde(deny_unknown_fields)]
-pub struct Recap {
-    /// The conversation.
-    pub external_id: String,
-    /// What Steery asks the model.
-    pub asked: String,
 }
 
 /// `session/changed`: a notification that a driver with its own door sends without a

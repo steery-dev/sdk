@@ -4,7 +4,7 @@ This document is the one contract between Steery's runtime (`steery`) and every 
 and **adapter**. It is also the contract between the control of the runtime and a remote
 host (§6). It is published under MIT in [steery-dev/sdk](https://github.com/steery-dev/sdk)
 with `steery-sdk`, the Rust crate that implements it. It is also published with the JSON
-Schema [`schema/protocol-v10.json`](schema/protocol-v10.json), which holds every shape below.
+Schema [`schema/protocol-v11.json`](schema/protocol-v11.json), which holds every shape below.
 Steery's own drivers ([steery-dev/drivers](https://github.com/steery-dev/drivers)) and
 adapters ([steery-dev/adapters](https://github.com/steery-dev/adapters)) are programs like
 any other. The runtime knows no program by its id, and every program is added in the same
@@ -354,7 +354,7 @@ A driver answers the methods of its levels. A method that its facts rule out is 
 
 - `hook/read` where the driver declares no hook
 - `hook/answer` where no hook is `via: command`
-- `stop`, `say`, `pick` and `recap` where the door is `plugin`, because the runtime speaks
+- `stop`, `say` and `pick` where the door is `plugin`, because the runtime speaks
   that door itself
 - `reader` and `reader/read` where `harness.reader` is absent
 
@@ -980,7 +980,6 @@ A driver reaches a live conversation in one of two ways. It says which way in `f
 |---|---|---|---|
 | `say` | `{external_id, words, mode: "steer" \| "queue" \| "immediate", id?}` | `{took}` | `no-door`, `no-answer`, `harness-busy`, `refused` |
 | `pick` | `{external_id, model?, thinking?}` | `{model?, thinking?}` as read back | `model-missing`, `selection-unsupported` |
-| `recap` | `{external_id, asked}` | `{text}`, which the conversation's own model writes | `no-answer`, `model-missing` |
 
 `steer` goes into the running turn. `queue` goes after it. `immediate` goes in only where
 nothing runs. Else the refusal is `harness-busy`, and nothing is handed over. `took` is true
@@ -1133,7 +1132,6 @@ ids. The plugin forgets an answer refused with a word other than `no-answer`.
 | `pick` | `model?, thinking?` | `{model?, thinking?}` read back | `selection-unsupported`, `model-missing`, `ending`, `no-answer`, `refused` |
 | `stop` | `say?` | `{stopped, running: [string]}`: whether a turn was stopped, and the background jobs that still run. | `other-turn`, `selection-unsupported`, `no-answer`, `ending`, `refused`. `other-turn`: `say` is given, and the running turn is not one that `say` began. `no-answer`: a turn still runs after 2.5 s. |
 | `force` | `say` | `{stopped, running: [string]}`, as `stop` | `refused` (no words of `say` wait here), `selection-unsupported`, `no-answer` (a turn still runs after 2.5 s), `ending` |
-| `recap` | — | `{text}` | `model-missing`, `selection-unsupported`, `ending`, `refused` |
 | `compact` | `before, summary, least` | `{from, forgot}` | `harness-busy` (a turn runs: nothing done), `ending`, `refused` |
 
 - The `id` of a say is the id that `LiveState.turn.says` and `settled[].says` name.
@@ -1683,7 +1681,6 @@ The plugin door (§4.4) also speaks `other-turn`. The door adds two words of its
 | `idle`, `receipt/find` | 20 s |
 | `say`, `pick` | 10 s |
 | `stop` | 2.8 s |
-| `recap` | 40 s |
 | `process/*` | 5 s |
 | `service/plan`, `service/status` | 10 s |
 | `service/start`, `service/restart`, `service/remove` | 30 s |
@@ -1699,12 +1696,16 @@ Records go in batches of at most 8 MiB (`door::RECORDS_MAX`). This bound applies
 
 ## 10. Versions
 
-This is version 10. Its shapes are strict (§2): a program or a runtime rejects a field that it
+This is version 11. Its shapes are strict (§2): a program or a runtime rejects a field that it
 does not know. Thus any change to a shape, a method, a word or a meaning gets a new protocol
 number. It is never an extension of this version. The runtime offers every number that it
 speaks, and the program picks one. The major version of `steery-sdk` is the protocol that it
 speaks. `steery-sdk` speaks every version that is still offered (`steery_sdk::PROTOCOLS`).
 
+- **Version 11** is version 10 without `recap`: the method (§4.3) and the door's ask (§4.4).
+  Nothing else changed. No runtime since Steery 7.1.12 asks a recap, and the server serves no
+  older one, so a driver answers none at any version it picks. The door keeps version 1: no
+  runtime sends the ask that left it.
 - **Version 10** is version 9 with changes-only listings: `sessions/list`'s `after`, and its
   answer's `cursor`, `after` and `gone` (§4.1). Nothing else changed. A driver that picked 9
   or older gets no `after` and gives none of the three fields. It answers each listing whole.

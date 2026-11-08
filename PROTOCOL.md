@@ -1,10 +1,10 @@
-# The program protocol, version 10
+# The program protocol, version 12
 
 This document is the one contract between Steery's runtime (`steery`) and every **driver**
 and **adapter**. It is also the contract between the control of the runtime and a remote
 host (§6). It is published under MIT in [steery-dev/sdk](https://github.com/steery-dev/sdk)
 with `steery-sdk`, the Rust crate that implements it. It is also published with the JSON
-Schema [`schema/protocol-v11.json`](schema/protocol-v11.json), which holds every shape below.
+Schema [`schema/protocol-v12.json`](schema/protocol-v12.json), which holds every shape below.
 Steery's own drivers ([steery-dev/drivers](https://github.com/steery-dev/drivers)) and
 adapters ([steery-dev/adapters](https://github.com/steery-dev/adapters)) are programs like
 any other. The runtime knows no program by its id, and every program is added in the same
@@ -184,7 +184,7 @@ from nothing else. These surfaces are its apps, its web pages and its cards.
 - `worktrees`: `start` makes a fork or a new conversation in a new worktree when asked.
 - `acts`: which of `continue`, `fork`, `new`, `hand` the driver does at all.
 - `touches?`: the driver sends `sessions/touched` for each conversation that changes (§4.1).
-  The runtime then sweeps none of its conversations. Absent: false.
+  The runtime then sweeps none of its conversations. Absent: false (version 12).
 
 A **Hook** is `{event, kind, via, says, waits?, env?}`:
 
@@ -555,7 +555,7 @@ each call whole. The runtime gives `after` only to a driver that picked version 
 and only a cursor that driver gave. `steery_sdk::listing` holds both halves: a driver's
 `Changes`, and the runtime's `Listed::then`.
 
-**Touches** (SDK 11.1). A driver whose `facts.touches` is true sends `sessions/touched
+**Touches** (version 12). A driver whose `facts.touches` is true sends `sessions/touched
 {external_ids}` with no request, one for each change that it sees. Each id is a
 conversation whose thread, or the thread of one of its sub-agents, changed. `["*"]`
 (`SessionsTouched::EVERY`) touches every conversation that the driver listed. The runtime
@@ -566,8 +566,8 @@ them. It lists the driver again in these cases:
 - A touch names `*`.
 - A touch names an id that the last listing of the driver does not hold.
 
-Thus a new conversation still appears. A runtime on an SDK older than 11.1 cannot read
-`touches`: a driver names it only to a runtime that can.
+Thus a new conversation still appears. A driver that picked 11 or older names no
+`touches` and sends no touch. The runtime sweeps its conversations.
 
 **`sessions/locate`** answers one conversation by its id, however old it is.
 
@@ -1712,12 +1712,16 @@ Records go in batches of at most 8 MiB (`door::RECORDS_MAX`). This bound applies
 
 ## 10. Versions
 
-This is version 11. Its shapes are strict (§2): a program or a runtime rejects a field that it
+This is version 12. Its shapes are strict (§2): a program or a runtime rejects a field that it
 does not know. Thus any change to a shape, a method, a word or a meaning gets a new protocol
 number. It is never an extension of this version. The runtime offers every number that it
 speaks, and the program picks one. The major version of `steery-sdk` is the protocol that it
 speaks. `steery-sdk` speaks every version that is still offered (`steery_sdk::PROTOCOLS`).
 
+- **Version 12** is version 11 with touches: the fact `touches` (§3.1) and the notification
+  `sessions/touched` (§4.1). Nothing else changed. A driver that picked 11 or older names no
+  `touches` and sends no touch, and the runtime sweeps it as before. SDK 11.1.0 added both
+  to version 11 by mistake. No program or runtime uses that release: use 12.0.0.
 - **Version 11** is version 10 without `recap`: the method (§4.3) and the door's ask (§4.4).
   Nothing else changed. No runtime since Steery 7.1.12 asks a recap, and the server serves no
   older one, so a driver answers none at any version it picks. The door keeps version 1: no

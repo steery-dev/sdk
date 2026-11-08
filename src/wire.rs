@@ -526,7 +526,8 @@ pub struct HarnessFacts {
     /// Every act that the harness can do.
     pub acts: Vec<harness::Act>,
     /// The driver sends `sessions/touched` for every conversation that changes. The runtime
-    /// then reads its conversations only when touched, and sweeps none of them (§4.1).
+    /// then reads its conversations only when touched, and sweeps none of them (§4.1). A
+    /// driver that picked a version older than [`crate::TOUCHES`] leaves it false.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub touches: bool,
 }

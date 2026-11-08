@@ -37,9 +37,10 @@ use tokio::sync::mpsc;
 /// - 9 is 8 with a harness's `lines` and `hosted`.
 /// - 10 is 9 with `sessions/list`'s `after`, `cursor` and `gone`.
 /// - 11 is 10 without `recap`, which no supported runtime asks.
+/// - 12 is 11 with touches (`facts.touches`, `sessions/touched`).
 ///
 /// A program answers with the newest of these that the runtime offers.
-pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7, 8, 9, 10, 11];
+pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 /// The first version in which `say` has an `id` and `stop` can name one (PROTOCOL.md §4.2,
 /// §4.3). The runtime gives neither to a program that picked an older version.
@@ -58,6 +59,11 @@ pub const LINES_HOSTED: u32 = 9;
 /// listing ([`listing`]). The runtime gives no `after` to a driver that picked an older
 /// version, and that driver answers none of the three.
 pub const LIST_CHANGES: u32 = 10;
+
+/// The first version in which a driver can say `facts.touches` and send `sessions/touched`
+/// (PROTOCOL.md §4.1). A driver that picked an older version does neither, and the runtime
+/// sweeps its conversations.
+pub const TOUCHES: u32 = 12;
 
 /// The version that a program answers `initialize` with: the newest of [`PROTOCOLS`] in
 /// `offered`. None when the runtime offers none of them.

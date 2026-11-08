@@ -1807,7 +1807,7 @@ pub struct SessionChanged {
 }
 
 /// `sessions/touched`: a notification that a driver whose facts say `touches` sends without
-/// a request, one for each change that it saw.
+/// a request, one for each change that it saw (version [`crate::TOUCHES`]).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]

@@ -29,6 +29,24 @@ pub struct Hook {
     /// The variables of the hook's process that the driver reads.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub env: Vec<String>,
+    /// At a `permission` moment of this event: which of `always: "tool"` and
+    /// `always: "everything"` the harness keeps for the rest of the session. The runtime
+    /// offers a person only these, beside the moment's own suggestions. Absent: both. A
+    /// driver that picked a version older than [`crate::KEEPS`] leaves it absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub keeps: Option<Vec<Kept>>,
+}
+
+/// A standing scope that a harness keeps for the rest of the session, where a person
+/// allows a call with it (§4.1, version [`crate::KEEPS`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum Kept {
+    /// Every call of the same tool (`always: "tool"`).
+    Tool,
+    /// Every call (`always: "everything"`).
+    Everything,
 }
 
 /// What a moment is.

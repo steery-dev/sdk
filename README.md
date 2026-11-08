@@ -10,7 +10,7 @@ holds that protocol and the tools to write a program.
 |---|---|
 | [PROTOCOL.md](PROTOCOL.md) | The protocol: every message, shape, refusal word and bound. |
 | [`steery-sdk`](src/lib.rs) | The Rust crate: the wire types, `serve` (a program's loop), the runtime's client, and the release manifest. |
-| [schema/protocol-v12.json](schema/protocol-v12.json) | Every shape as JSON Schema. |
+| [schema/protocol-v13.json](schema/protocol-v13.json) | Every shape as JSON Schema. |
 | [examples/driver](examples/driver) | The smallest driver. |
 | [examples/adapter](examples/adapter) | The smallest adapter that makes hosts. |
 
@@ -38,7 +38,7 @@ Steery uses them exactly as it uses your programs.
    not by path:
 
    ```toml
-   steery-sdk = { git = "https://github.com/steery-dev/sdk", tag = "v12.0.0" }
+   steery-sdk = { git = "https://github.com/steery-dev/sdk", tag = "v13.0.0" }
    ```
 
 2. In `initialize`, change the id, label and facts to those of your harness (PROTOCOL.md §3.1).

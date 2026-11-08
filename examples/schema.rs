@@ -140,6 +140,7 @@ fn main() {
         harness::Pick,
         harness::Picked,
         harness::SessionChanged,
+        harness::SessionsTouched,
         harness::LiveState,
         harness::LiveTurn,
         harness::LiveRetry,

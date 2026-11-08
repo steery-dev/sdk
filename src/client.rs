@@ -532,6 +532,7 @@ mod tests {
                         checks_idle: false,
                         worktrees: false,
                         acts: Vec::new(),
+                        touches: false,
                     },
                     hooks: Vec::new(),
                 })),

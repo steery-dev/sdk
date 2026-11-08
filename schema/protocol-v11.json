@@ -2054,6 +2054,11 @@
           "description": "A continue runs only in the folder the conversation ran in.",
           "type": "boolean"
         },
+        "touches": {
+          "default": false,
+          "description": "The driver sends `sessions/touched` for every conversation that changes. The runtime\nthen reads its conversations only when touched, and sweeps none of them (§4.1).",
+          "type": "boolean"
+        },
         "worktrees": {
           "description": "`start` makes a new worktree for a fork or a new conversation when the call asks for\none.",
           "type": "boolean"
@@ -5937,6 +5942,23 @@
       ],
       "type": "object"
     },
+    "SessionsTouched": {
+      "additionalProperties": false,
+      "description": "`sessions/touched`: a notification that a driver whose facts say `touches` sends without\na request, one for each change that it saw.",
+      "properties": {
+        "external_ids": {
+          "description": "The conversations whose thread, or a thread of one of whose sub-agents, changed.\n[`SessionsTouched::EVERY`] names every conversation that the driver listed.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "external_ids"
+      ],
+      "type": "object"
+    },
     "Setting": {
       "additionalProperties": false,
       "description": "A setting a program needs a person to give once.",
@@ -7344,6 +7366,9 @@
     },
     {
       "$ref": "#/$defs/SessionRef"
+    },
+    {
+      "$ref": "#/$defs/SessionsTouched"
     },
     {
       "$ref": "#/$defs/Setting"

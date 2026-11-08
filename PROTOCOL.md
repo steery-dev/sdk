@@ -183,6 +183,8 @@ from nothing else. These surfaces are its apps, its web pages and its cards.
   So words that must go in only while nothing runs (`immediate`) can go through it.
 - `worktrees`: `start` makes a fork or a new conversation in a new worktree when asked.
 - `acts`: which of `continue`, `fork`, `new`, `hand` the driver does at all.
+- `touches?`: the driver sends `sessions/touched` for each conversation that changes (§4.1).
+  The runtime then sweeps none of its conversations. Absent: false.
 
 A **Hook** is `{event, kind, via, says, waits?, env?}`:
 
@@ -552,6 +554,20 @@ listings has a `cursor`, the one of a whole listing too. A driver that names non
 each call whole. The runtime gives `after` only to a driver that picked version 10 or newer,
 and only a cursor that driver gave. `steery_sdk::listing` holds both halves: a driver's
 `Changes`, and the runtime's `Listed::then`.
+
+**Touches** (SDK 11.1). A driver whose `facts.touches` is true sends `sessions/touched
+{external_ids}` with no request, one for each change that it sees. Each id is a
+conversation whose thread, or the thread of one of its sub-agents, changed. `["*"]`
+(`SessionsTouched::EVERY`) touches every conversation that the driver listed. The runtime
+reads the conversations of such a driver only when a touch names them, and never sweeps
+them. It lists the driver again in these cases:
+
+- The runtime starts, or the driver starts again.
+- A touch names `*`.
+- A touch names an id that the last listing of the driver does not hold.
+
+Thus a new conversation still appears. A runtime on an SDK older than 11.1 cannot read
+`touches`: a driver names it only to a runtime that can.
 
 **`sessions/locate`** answers one conversation by its id, however old it is.
 

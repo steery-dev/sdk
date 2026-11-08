@@ -38,7 +38,7 @@ Steery uses them exactly as it uses your programs.
    not by path:
 
    ```toml
-   steery-sdk = { git = "https://github.com/steery-dev/sdk", tag = "v11.0.1" }
+   steery-sdk = { git = "https://github.com/steery-dev/sdk", tag = "v11.1.0" }
    ```
 
 2. In `initialize`, change the id, label and facts to those of your harness (PROTOCOL.md §3.1).

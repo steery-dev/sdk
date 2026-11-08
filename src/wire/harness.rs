@@ -1806,6 +1806,22 @@ pub struct SessionChanged {
     pub state: LiveState,
 }
 
+/// `sessions/touched`: a notification that a driver whose facts say `touches` sends without
+/// a request, one for each change that it saw.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct SessionsTouched {
+    /// The conversations whose thread, or a thread of one of whose sub-agents, changed.
+    /// [`SessionsTouched::EVERY`] names every conversation that the driver listed.
+    pub external_ids: Vec<String>,
+}
+
+impl SessionsTouched {
+    /// The id that names every conversation that the driver listed.
+    pub const EVERY: &'static str = "*";
+}
+
 /// The state of a running conversation, as a door gives it.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]

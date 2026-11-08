@@ -234,6 +234,9 @@ pub fn carried(name: &str) -> Option<Duration> {
 
 /// A notification that a driver with its own door sends without a request (§4.3).
 pub const SESSION_CHANGED: &str = "session/changed";
+/// A notification that a driver whose facts say `touches` sends without a request: the
+/// conversations that changed (§4.1).
+pub const SESSIONS_TOUCHED: &str = "sessions/touched";
 /// A notification: the bytes of the adapter from a `stream` channel (§5.3).
 pub const STREAM_DATA: &str = "stream/data";
 /// A notification: a `stream` channel ended (§5.3).

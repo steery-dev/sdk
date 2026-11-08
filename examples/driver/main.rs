@@ -84,6 +84,7 @@ impl Program for Example {
                     checks_idle: false,
                     worktrees: false,
                     acts: Vec::new(),
+                    touches: false,
                 },
                 hooks: Vec::new(),
             })),

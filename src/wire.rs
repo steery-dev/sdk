@@ -525,6 +525,10 @@ pub struct HarnessFacts {
     pub worktrees: bool,
     /// Every act that the harness can do.
     pub acts: Vec<harness::Act>,
+    /// The driver sends `sessions/touched` for every conversation that changes. The runtime
+    /// then reads its conversations only when touched, and sweeps none of them (§4.1).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub touches: bool,
 }
 
 /// What a continue keeps without an instruction.

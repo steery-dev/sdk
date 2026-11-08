@@ -2056,7 +2056,7 @@
         },
         "touches": {
           "default": false,
-          "description": "The driver sends `sessions/touched` for every conversation that changes. The runtime\nthen reads its conversations only when touched, and sweeps none of them (§4.1).",
+          "description": "The driver sends `sessions/touched` for every conversation that changes. The runtime\nthen reads its conversations only when touched, and sweeps none of them (§4.1). A\ndriver that picked a version older than [`crate::TOUCHES`] leaves it false.",
           "type": "boolean"
         },
         "worktrees": {
@@ -5944,7 +5944,7 @@
     },
     "SessionsTouched": {
       "additionalProperties": false,
-      "description": "`sessions/touched`: a notification that a driver whose facts say `touches` sends without\na request, one for each change that it saw.",
+      "description": "`sessions/touched`: a notification that a driver whose facts say `touches` sends without\na request, one for each change that it saw (version [`crate::TOUCHES`]).",
       "properties": {
         "external_ids": {
           "description": "The conversations whose thread, or a thread of one of whose sub-agents, changed.\n[`SessionsTouched::EVERY`] names every conversation that the driver listed.",
@@ -6818,7 +6818,7 @@
       "type": "object"
     }
   },
-  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v11.json",
+  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v12.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "anyOf": [
     {
@@ -7473,6 +7473,6 @@
       "$ref": "#/$defs/Way"
     }
   ],
-  "description": "Every shape of the Steery program protocol, version 10 (PROTOCOL.md), and the release manifest programs are published by.",
+  "description": "Every shape of the Steery program protocol, version 12 (PROTOCOL.md), and the release manifest programs are published by.",
   "title": "Protocol"
 }

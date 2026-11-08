@@ -1,10 +1,10 @@
-# The program protocol, version 12
+# The program protocol, version 13
 
 This document is the one contract between Steery's runtime (`steery`) and every **driver**
 and **adapter**. It is also the contract between the control of the runtime and a remote
 host (§6). It is published under MIT in [steery-dev/sdk](https://github.com/steery-dev/sdk)
 with `steery-sdk`, the Rust crate that implements it. It is also published with the JSON
-Schema [`schema/protocol-v12.json`](schema/protocol-v12.json), which holds every shape below.
+Schema [`schema/protocol-v13.json`](schema/protocol-v13.json), which holds every shape below.
 Steery's own drivers ([steery-dev/drivers](https://github.com/steery-dev/drivers)) and
 adapters ([steery-dev/adapters](https://github.com/steery-dev/adapters)) are programs like
 any other. The runtime knows no program by its id, and every program is added in the same
@@ -186,7 +186,7 @@ from nothing else. These surfaces are its apps, its web pages and its cards.
 - `touches?`: the driver sends `sessions/touched` for each conversation that changes (§4.1).
   The runtime then sweeps none of its conversations. Absent: false (version 12).
 
-A **Hook** is `{event, kind, via, says, waits?, env?}`:
+A **Hook** is `{event, kind, via, says, waits?, env?, keeps?}`:
 
 - `event`: the harness's own name for the moment, unique in the list.
 - `kind`: what the moment is:
@@ -227,6 +227,10 @@ A **Hook** is `{event, kind, via, says, waits?, env?}`:
   it within 5 s, whatever `waits` says. Thus a long `waits` never holds an ordinary call.
 - `env?`: names of variables of the hook's process that the driver reads
   (`CLAUDE_ENV_FILE`). The runtime passes their values in `hook/read` and `hook/answer`.
+- `keeps?` (version 13): at a `permission` moment of this event, which of `"tool"` and
+  `"everything"` (the `always` of an Answer, §4.1) the harness keeps for the rest of the
+  session. The runtime offers a person only these, beside the moment's own `suggestions`.
+  An empty list: the harness keeps neither. Absent: both.
 
 ### 3.2 An adapter
 
@@ -754,8 +758,9 @@ An **Answer** is what the runtime decided: `{say?, decision?, lead?}`.
 - `decision` is `{"allow": {reason, always?}}` or `{"deny": {reason}}`. `allow` lets the
   call go without the harness asking. `always` is `{"suggestion": n}` (one of the
   `suggestions` of the moment), `"tool"` (this tool for the rest of the session), or
-  `"everything"`. `deny` blocks the call. The reason is what the agent reads (the answer of
-  a person to a question, or why a plan was not approved).
+  `"everything"`. The runtime offers `"tool"` and `"everything"` only where the hook's
+  `keeps` lists them (§3.1). `deny` blocks the call. The reason is what the agent reads (the
+  answer of a person to a question, or why a plan was not approved).
 - `lead` is the `STEERY_LEAD` value for the later processes of the conversation to
   inherit.
 
@@ -1712,12 +1717,15 @@ Records go in batches of at most 8 MiB (`door::RECORDS_MAX`). This bound applies
 
 ## 10. Versions
 
-This is version 12. Its shapes are strict (§2): a program or a runtime rejects a field that it
+This is version 13. Its shapes are strict (§2): a program or a runtime rejects a field that it
 does not know. Thus any change to a shape, a method, a word or a meaning gets a new protocol
 number. It is never an extension of this version. The runtime offers every number that it
 speaks, and the program picks one. The major version of `steery-sdk` is the protocol that it
 speaks. `steery-sdk` speaks every version that is still offered (`steery_sdk::PROTOCOLS`).
 
+- **Version 13** is version 12 with a hook's `keeps` (§3.1): the standing scopes that a
+  harness keeps at a `permission` moment. Nothing else changed. A driver that picked 12 or
+  older names no `keeps`, and the runtime offers `"tool"` and `"everything"` as before.
 - **Version 12** is version 11 with touches: the fact `touches` (§3.1) and the notification
   `sessions/touched` (§4.1). Nothing else changed. A driver that picked 11 or older names no
   `touches` and sends no touch, and the runtime sweeps it as before. SDK 11.1.0 added both

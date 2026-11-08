@@ -38,9 +38,10 @@ use tokio::sync::mpsc;
 /// - 10 is 9 with `sessions/list`'s `after`, `cursor` and `gone`.
 /// - 11 is 10 without `recap`, which no supported runtime asks.
 /// - 12 is 11 with touches (`facts.touches`, `sessions/touched`).
+/// - 13 is 12 with a permission hook's `keeps`.
 ///
 /// A program answers with the newest of these that the runtime offers.
-pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 
 /// The first version in which `say` has an `id` and `stop` can name one (PROTOCOL.md §4.2,
 /// §4.3). The runtime gives neither to a program that picked an older version.
@@ -64,6 +65,11 @@ pub const LIST_CHANGES: u32 = 10;
 /// (PROTOCOL.md §4.1). A driver that picked an older version does neither, and the runtime
 /// sweeps its conversations.
 pub const TOUCHES: u32 = 12;
+
+/// The first version in which a hook can say `keeps`: the standing scopes that its harness
+/// keeps (PROTOCOL.md §3.1). A driver that picked an older version leaves it absent, and the
+/// runtime offers both scopes.
+pub const KEEPS: u32 = 13;
 
 /// The version that a program answers `initialize` with: the newest of [`PROTOCOLS`] in
 /// `offered`. None when the runtime offers none of them.

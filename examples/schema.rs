@@ -1,6 +1,6 @@
 //! Writes one JSON Schema document holding every wire type and the release manifest under
 //! `$defs` to standard output: `cargo run --features schema --example schema`. Its output is
-//! `schema/protocol-v12.json`.
+//! `schema/protocol-v13.json`.
 
 use schemars::SchemaGenerator;
 use schemars::generate::SchemaSettings;
@@ -43,6 +43,7 @@ fn main() {
         wire::Empty,
         harness::Hook,
         harness::HookKind,
+        harness::Kept,
         harness::Via,
         harness::Says,
         harness::Setup,
@@ -244,9 +245,9 @@ fn main() {
         .collect();
     let document = json!({
         "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v12.json",
+        "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v13.json",
         "title": "Protocol",
-        "description": "Every shape of the Steery program protocol, version 12 (PROTOCOL.md), and the release manifest programs are published by.",
+        "description": "Every shape of the Steery program protocol, version 13 (PROTOCOL.md), and the release manifest programs are published by.",
         "anyOf": refs,
         "$defs": defs,
     });

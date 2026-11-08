@@ -2055,7 +2055,6 @@
           "type": "boolean"
         },
         "touches": {
-          "default": false,
           "description": "The driver sends `sessions/touched` for every conversation that changes. The runtime\nthen reads its conversations only when touched, and sweeps none of them (§4.1). A\ndriver that picked a version older than [`crate::TOUCHES`] leaves it false.",
           "type": "boolean"
         },
@@ -2329,6 +2328,13 @@
         "event": {
           "description": "The harness's own name for the moment, unique in the list.",
           "type": "string"
+        },
+        "keeps": {
+          "description": "At a `permission` moment of this event: which of `always: \"tool\"` and\n`always: \"everything\"` the harness keeps for the rest of the session. The runtime\noffers a person only these, beside the moment's own suggestions. Absent: both. A\ndriver that picked a version older than [`crate::KEEPS`] leaves it absent.",
+          "items": {
+            "$ref": "#/$defs/Kept"
+          },
+          "type": "array"
         },
         "kind": {
           "$ref": "#/$defs/HookKind",
@@ -2968,6 +2974,21 @@
         "thinking"
       ],
       "type": "object"
+    },
+    "Kept": {
+      "description": "A standing scope that a harness keeps for the rest of the session, where a person\nallows a call with it (§4.1, version [`crate::KEEPS`]).",
+      "oneOf": [
+        {
+          "const": "tool",
+          "description": "Every call of the same tool (`always: \"tool\"`).",
+          "type": "string"
+        },
+        {
+          "const": "everything",
+          "description": "Every call (`always: \"everything\"`).",
+          "type": "string"
+        }
+      ]
     },
     "Kind": {
       "description": "What a program connects Steery to.",
@@ -6818,7 +6839,7 @@
       "type": "object"
     }
   },
-  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v12.json",
+  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v13.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "anyOf": [
     {
@@ -7087,6 +7108,9 @@
     },
     {
       "$ref": "#/$defs/Keeps"
+    },
+    {
+      "$ref": "#/$defs/Kept"
     },
     {
       "$ref": "#/$defs/Kind"
@@ -7473,6 +7497,6 @@
       "$ref": "#/$defs/Way"
     }
   ],
-  "description": "Every shape of the Steery program protocol, version 12 (PROTOCOL.md), and the release manifest programs are published by.",
+  "description": "Every shape of the Steery program protocol, version 13 (PROTOCOL.md), and the release manifest programs are published by.",
   "title": "Protocol"
 }

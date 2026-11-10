@@ -1,10 +1,10 @@
-# The program protocol, version 13
+# The program protocol, version 14
 
 This document is the one contract between Steery's runtime (`steery`) and every **driver**
 and **adapter**. It is also the contract between the control of the runtime and a remote
 host (§6). It is published under MIT in [steery-dev/sdk](https://github.com/steery-dev/sdk)
 with `steery-sdk`, the Rust crate that implements it. It is also published with the JSON
-Schema [`schema/protocol-v13.json`](schema/protocol-v13.json), which holds every shape below.
+Schema [`schema/protocol-v14.json`](schema/protocol-v14.json), which holds every shape below.
 Steery's own drivers ([steery-dev/drivers](https://github.com/steery-dev/drivers)) and
 adapters ([steery-dev/adapters](https://github.com/steery-dev/adapters)) are programs like
 any other. The runtime knows no program by its id, and every program is added in the same
@@ -489,11 +489,20 @@ runtime asks again. A sign-in completes in the harness's own flow. The driver st
 harness's own sign-in and gives it the code. It never signs in to a vendor itself. It keeps
 nothing that a sign-in gives.
 
-An **Entry** is `{path, format: "json" | "toml" | "text", at?, value, carries}`. `path` is
-an absolute file. `at` is the place in it (a JSON Pointer or a TOML key path). Absent: the
-whole file, and a `text` value is a string. `carries` lists what reaches the harness through
-the entry: `mcp`, `skill`, `hooks`, `plugin`. One entry can carry several (pi's plugin
-carries its MCP entry).
+An **Entry** is `{path, format: "json" | "toml" | "yaml" | "text", at?, value, carries}`.
+`path` is an absolute file. `at` is the place in it: a JSON Pointer, or for `toml` and
+`yaml` a TOML key path (`mcp_servers.steery`). Absent: the whole file, and a `text` value
+is a string. `carries` lists what reaches the harness through the entry: `mcp`, `skill`,
+`hooks`, `plugin`. One entry can carry several (pi's plugin carries its MCP entry).
+
+A `yaml` entry (version 14) is for a harness that reads its setup from its person's YAML
+file (Hermes Agent's `config.yaml`). The runtime merges the value at the key path. The
+runtime keeps every other byte of the file as its person wrote it: comments, order, layout.
+The runtime writes the containers above the key, and the value, in block style; inside an
+empty `{}`, in flow style. It refuses a file that is not one YAML document, a container on
+the path that is not a mapping, is in flow style and not empty, is an alias, or holds the
+key twice, and a value at the key that carries an anchor. A driver that picked 13 or older
+plans no `yaml` entry, and the runtime refuses its plan if it does.
 
 A JSON `at` can end in `/-`, the past-the-end index of JSON Pointer. Then the value is one
 element of the array there:
@@ -1717,12 +1726,15 @@ Records go in batches of at most 8 MiB (`door::RECORDS_MAX`). This bound applies
 
 ## 10. Versions
 
-This is version 13. Its shapes are strict (§2): a program or a runtime rejects a field that it
+This is version 14. Its shapes are strict (§2): a program or a runtime rejects a field that it
 does not know. Thus any change to a shape, a method, a word or a meaning gets a new protocol
 number. It is never an extension of this version. The runtime offers every number that it
 speaks, and the program picks one. The major version of `steery-sdk` is the protocol that it
 speaks. `steery-sdk` speaks every version that is still offered (`steery_sdk::PROTOCOLS`).
 
+- **Version 14** is version 13 with the setup format `yaml` (§4.1): a key path in a person's
+  YAML file, merged as a `toml` entry is. Nothing else changed. A driver that picked 13 or
+  older plans no `yaml` entry.
 - **Version 13** is version 12 with a hook's `keeps` (§3.1): the standing scopes that a
   harness keeps at a `permission` moment. Nothing else changed. A driver that picked 12 or
   older names no `keeps`, and the runtime offers `"tool"` and `"everything"` as before.

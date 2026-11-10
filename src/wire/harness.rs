@@ -309,7 +309,8 @@ pub struct Entry {
     pub path: PathBuf,
     /// The format of the file.
     pub format: Format,
-    /// The place in it: a JSON Pointer or a TOML key path; absent: the whole file.
+    /// The place in it: a JSON Pointer, or for `toml` and `yaml` a TOML key path; absent: the
+    /// whole file.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub at: Option<String>,
     /// The value at that place. For a `text` file, the value is a string.
@@ -318,13 +319,14 @@ pub struct Entry {
     pub carries: Vec<Part>,
 }
 
-/// The format of a setup file.
+/// The format of a setup file. `yaml` is from version 14 ([`crate::YAML`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum Format {
     Json,
     Toml,
+    Yaml,
     Text,
 }
 

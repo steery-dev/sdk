@@ -872,7 +872,7 @@
       "description": "One place in one file that the runtime writes. The runtime merges it byte-exactly,\nrecords it, and gives it back when it removes the harness.",
       "properties": {
         "at": {
-          "description": "The place in it: a JSON Pointer or a TOML key path; absent: the whole file.",
+          "description": "The place in it: a JSON Pointer, or for `toml` and `yaml` a TOML key path; absent: the\nwhole file.",
           "type": "string"
         },
         "carries": {
@@ -1680,10 +1680,11 @@
       "type": "object"
     },
     "Format": {
-      "description": "The format of a setup file.",
+      "description": "The format of a setup file. `yaml` is from version 14 ([`crate::YAML`]).",
       "enum": [
         "json",
         "toml",
+        "yaml",
         "text"
       ],
       "type": "string"
@@ -6839,7 +6840,7 @@
       "type": "object"
     }
   },
-  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v13.json",
+  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v14.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "anyOf": [
     {
@@ -7497,6 +7498,6 @@
       "$ref": "#/$defs/Way"
     }
   ],
-  "description": "Every shape of the Steery program protocol, version 13 (PROTOCOL.md), and the release manifest programs are published by.",
+  "description": "Every shape of the Steery program protocol, version 14 (PROTOCOL.md), and the release manifest programs are published by.",
   "title": "Protocol"
 }

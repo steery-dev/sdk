@@ -132,6 +132,11 @@ pub struct Setup {
     /// person trusts a folder themselves.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub trusts: Vec<PathBuf>,
+    /// The ids of needs that the person asked to give again on this host, though the
+    /// harness has them (a sign-in to change). The driver plans each one that it can give
+    /// again. Version 15 ([`crate::ASK`]): empty for a driver that picked an older version.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub ask: Vec<String>,
 }
 
 /// The harness that the driver found here, and the entries that configure it.
@@ -264,6 +269,11 @@ pub enum Given {
         /// Empty where the given values stay in this host.
         #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
         env: BTreeMap<String, String>,
+        /// Variables that an earlier `done` gave and that the runtime no longer keeps for
+        /// this harness: those of another way that would outrank this one. Version 15
+        /// ([`crate::ASK`]): empty for a driver that picked an older version.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        unset: Vec<String>,
     },
     /// One more step: Steery asks for this way next (for example, the link and code of a
     /// sign-in that started).

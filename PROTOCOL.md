@@ -368,14 +368,14 @@ A driver answers the methods of its levels. A method that its facts rule out is 
 
 | Method | Params | Result |
 |---|---|---|
-| `setup/plan` | `{mcp_url, skill, hook, door, release, timeout, trusts?}` | `{found?: Found, refused?, entries: [Entry], notes: [string], install?: {argv, about}, needs?: [Need]}` (`needs`: version 5) |
+| `setup/plan` | `{mcp_url, skill, hook, door, release, timeout, trusts?, ask?}` | `{found?: Found, refused?, entries: [Entry], notes: [string], install?: {argv, about}, needs?: [Need]}` (`needs`: version 5; `ask`: version 15) |
 | `sessions/list` | `{seen_since?, transcripts: [path], after?}` | `{sessions: [Session], excluded: [string], complete, cursor?, after?, gone?: [string]}` |
 | `sessions/locate` | `{external_id}` | `{session: Session}`; refused `not-found` |
 | `sessions/read` | `{external_id, sub_agent?, cursor?, tail?}` | `{cursor, events: [Event], more, reset, whole, after?}`; refused `not-found`, `refused` |
 | `sessions/fold` | `{external_id, sub_agent?, cursor?, records: [Record], quiet}` | `{cursor, events: [Event], consumed}`; refused `selection-unsupported` |
 | `hook/read` | `{event, document, env}` | `{moment?: Moment}` |
 | `hook/answer` | `{event, document, env, answer: Answer}` | `{stdout, exit_code, append?: {path, text}}` |
-| `needs/give` (version 5) | `{need, way, values: {name: value}}` | `{done: {line, env?}}` or `{next: Way}`; refused `not-found`, `refused` |
+| `needs/give` (version 5) | `{need, way, values: {name: value}}` | `{done: {line, env?, unset?}}` or `{next: Way}`; refused `not-found`, `refused` (`unset`: version 15) |
 | `mcp/list` (version 4) | `{cwd?}` | `{servers: [{server, url?}], complete, watch: [path]}`; refused `no-binary`, `refused` |
 
 **`mcp/list`** answers the MCP servers that the harness loads. Thus Steery can tell which
@@ -461,6 +461,14 @@ an entry that Steery writes itself, and never an install. `id` is the same for t
 every plan. `title` is the short question of a card. `line` says what is missing and what
 it stops. Both are in the driver's words.
 
+`setup/plan`'s `ask` (version 15) names needs that the person asked to give again on this
+host, though the harness has them: a person who signs Claude Code in to a company's gateway
+in place of a plan. A driver plans each need that `ask` names and that it can give again,
+also where nothing lacks. Its `title` and `line` then say what is there now (`Change how
+Claude Code signs in?`, `Claude Code is signed in with a Claude plan.`). The runtime sends
+`ask` only to a driver that picked 15 or newer, and only until the need is met or its
+person said Not now.
+
 A **Way** is `{id, label, about?, link?: {label, url, fills?}, fields: [{name, label,
 about?, secret}], ends_at?}`: one way to give the need. The driver's pick comes first. The
 runtime asks each need once, on one card of its person's, only while work on the machine
@@ -472,15 +480,18 @@ person types it.
 
 `needs/give` answers one of these:
 
-- `{done: {line, env?}}`: the need is met.
+- `{done: {line, env?, unset?}}`: the need is met.
 - `{next: Way}`: one more step (a sign-in that the driver started: its link and code). The
   runtime asks it on a card of its own before `ends_at`.
 
 `env` holds variables that the runtime keeps for this harness on this machine, sealed at
 mode 0600. From then on, on every host, the runtime adds them to the environment of the
 harness's driver. It adds them in the same way to the environment of every turn and read
-that the driver plans. `env` is empty where what the person gave stays in this host. The
-runtime asks `setup/plan` again after each `done`.
+that the driver plans. `env` is empty where what the person gave stays in this host.
+`unset` (version 15) names variables that an earlier `done` gave and that the runtime no
+longer keeps for this harness: those of another way, which would outrank the way just
+given. A driver that picked 14 or older names none. The runtime asks `setup/plan` again
+after each `done`.
 
 The driver refuses `not-found` for a need or a way that this host no longer lacks. It
 refuses `refused`, with one line, for values that do not give the need (a key that the
@@ -1726,12 +1737,15 @@ Records go in batches of at most 8 MiB (`door::RECORDS_MAX`). This bound applies
 
 ## 10. Versions
 
-This is version 14. Its shapes are strict (§2): a program or a runtime rejects a field that it
+This is version 15. Its shapes are strict (§2): a program or a runtime rejects a field that it
 does not know. Thus any change to a shape, a method, a word or a meaning gets a new protocol
 number. It is never an extension of this version. The runtime offers every number that it
 speaks, and the program picks one. The major version of `steery-sdk` is the protocol that it
 speaks. `steery-sdk` speaks every version that is still offered (`steery_sdk::PROTOCOLS`).
 
+- **Version 15** is version 14 with a need asked again (§4.1): `setup/plan`'s `ask`, and
+  `done`'s `unset`. Nothing else changed. The runtime sends no `ask` to a driver that picked
+  14 or older, and such a driver names no `unset`.
 - **Version 14** is version 13 with the setup format `yaml` (§4.1): a key path in a person's
   YAML file, merged as a `toml` entry is. Nothing else changed. A driver that picked 13 or
   older plans no `yaml` entry.

@@ -1,10 +1,10 @@
-# The program protocol, version 14
+# The program protocol, version 17
 
 This document is the one contract between Steery's runtime (`steery`) and every **driver**
 and **adapter**. It is also the contract between the control of the runtime and a remote
 host (§6). It is published under MIT in [steery-dev/sdk](https://github.com/steery-dev/sdk)
 with `steery-sdk`, the Rust crate that implements it. It is also published with the JSON
-Schema [`schema/protocol-v14.json`](schema/protocol-v14.json), which holds every shape below.
+Schema [`schema/protocol-v17.json`](schema/protocol-v17.json), which holds every shape below.
 Steery's own drivers ([steery-dev/drivers](https://github.com/steery-dev/drivers)) and
 adapters ([steery-dev/adapters](https://github.com/steery-dev/adapters)) are programs like
 any other. The runtime knows no program by its id, and every program is added in the same
@@ -128,7 +128,7 @@ from nothing else. These surfaces are its apps, its web pages and its cards.
 ### 3.1 A driver
 
 ```json
-{"protocol": 4,
+{"protocol": 17,
  "program": {"id": "omp", "kind": "harness", "release": "1.0.0", "label": "omp", "short": "omp",
              "tint": "#6e62a8", "mark": "M4 4h16v16H4z"},
  "harness": {
@@ -138,7 +138,7 @@ from nothing else. These surfaces are its apps, its web pages and its cards.
    "knowing": "…how an agent in this harness learns its conversation's id…",
    "transcript": "…one line on how its transcript file reads…",
    "identity": {"executables": ["omp"], "package": "@oh-my-pi"},
-   "setup": {"reads_skills": true, "cuts_tool_text": false},
+   "setup": {"skill": "prompt", "cuts_tool_text": false},
    "reader": {"sealed": {"tools": true, "mcp": false, "instructions": true,
                          "extensions": true, "history": true},
               "known": [], "unnamed": false},
@@ -146,7 +146,7 @@ from nothing else. These surfaces are its apps, its web pages and its cards.
              "keeps": {"model": false, "thinking": false}, "door": "plugin",
              "checks_idle": true, "worktrees": false, "acts": ["continue", "fork", "new"]},
    "hooks": [{"event": "UserPromptSubmit", "kind": "prompt", "via": "door",
-              "says": ["context", "notice"]},
+              "says": ["context"]},
              {"event": "PreToolUse", "kind": "before_call", "via": "door", "says": ["calls"]}]},
  "settings": []}
 ```
@@ -161,7 +161,7 @@ from nothing else. These surfaces are its apps, its web pages and its cards.
 | `hosted?` | The operations of Steery's catalog that the harness hosts as tools of its own, each by the name of its tool: `{"cards.put": "card", "sessions.describe": "describe"}`. Steery's skill and hooks name each one so. They name every other operation as Steery spells it. Absent: none (version 9). |
 | `transcript?` | One line on how the transcript file of the harness reads, for a reader that gets one. Absent: the harness keeps no transcript file, and a carry refuses. |
 | `identity` | How the runtime recognizes the processes and MCP calls of the harness (§3.3): `{executables, package?, session_variable?, call_meta?: {session, sub_agent?}}` (`call_meta`: version 8). |
-| `setup` | `{reads_skills, cuts_tool_text, call_bound?}`. `reads_skills`: the harness reads Steery's skill from the entry that `setup/plan` lists. Where it is false, the runtime carries the whole skill in its MCP handshake. `cuts_tool_text`: the harness cuts the description of an MCP tool before its model reads it. So the runtime also says its escalation policies whole at `session_start`. `call_bound`: the longest time, in seconds, that the harness waits for one MCP call, where no entry can make it longer. The runtime answers a wait within it. |
+| `setup` | `{skill, cuts_tool_text, call_bound?}`. `skill` (version 17) says how the agent gets Steery's skill. `listed`: the harness lists the skill from the entry that `setup/plan` writes, and the agent loads it when told. `prompt`: the harness's plugin puts the whole skill in the system prompt. `handshake`: the runtime carries the whole skill in its MCP handshake. A driver that picked 16 or older says `reads_skills: bool` in its place: true reads as `listed`, false as `handshake`. `cuts_tool_text`: the harness cuts the description of an MCP tool before its model reads it. So the runtime also says its escalation policies whole at `session_start`. `call_bound`: the longest time, in seconds, that the harness waits for one MCP call, where no entry can make it longer. The runtime answers a wait within it. |
 | `reader?` | The one-shot reader (§4.2): `{sealed, known, unnamed}`. `sealed` says which of `tools`, `mcp`, `instructions`, `extensions`, `history` the reader shuts out (true) or still reaches (false). The runtime tells a person, and tries the most sealed reader first. `known`: models that the reader runs but that `models` does not always list. `unnamed`: the reader runs the harness's own model when it gets none. Absent: the driver has no reader. |
 | `facts` | What the holder rule and offers read, below. |
 | `hooks` | Every moment of the harness that the runtime reads (§4.1): `[Hook]`. |
@@ -187,7 +187,7 @@ from nothing else. These surfaces are its apps, its web pages and its cards.
 - `touches?`: the driver sends `sessions/touched` for each conversation that changes (§4.1).
   The runtime then sweeps none of its conversations. Absent: false (version 12).
 
-A **Hook** is `{event, kind, via, says, waits?, env?, keeps?}`:
+A **Hook** is `{event, kind, via, says, waits?, env?, keeps?, room?}`:
 
 - `event`: the harness's own name for the moment, unique in the list.
 - `kind`: what the moment is:
@@ -196,14 +196,16 @@ A **Hook** is `{event, kind, via, says, waits?, env?, keeps?}`:
   - `before_call`, `after_call`, `turn_end`, `session_end`
   - `permission` (the harness asks its person to allow a call)
   - `notification` (the harness tells its person something)
-  - `sub_agent_start`
+  - `sub_agent_start`, `sub_agent_end` (version 17)
+  - `compacting` (version 17: the harness is about to summarise the context. Its `context`
+    paragraph is the harness's instruction for the summary.)
   - `changed` (what the conversation runs on changed: its model)
 
   The kind says what the agent does from then on:
   - `prompt` and `after_call`: working
   - `before_call`: waiting on the call
   - `turn_end`, `session_end`, `permission` and `notification`: nothing
-  - `session_start` and `sub_agent_start`: no claim
+  - `session_start`, `sub_agent_start`, `sub_agent_end` and `compacting`: no claim
 
   A `changed` moment says nothing about the state of the conversation, except in the state
   fields of its Moment.
@@ -217,7 +219,8 @@ A **Hook** is `{event, kind, via, says, waits?, env?, keeps?}`:
   these paragraphs nowhere else.
   - `context`: Steery's paragraph for the conversation. At a `turn_end`, it makes the agent
     continue with it. At a `sub_agent_start`, it reaches the sub-agent.
-  - `notice`: that words wait for the agent.
+  - `notice`: unread. A driver on version 16 or older may still name it; the runtime gives
+    no paragraph for it, and a driver declares it no more.
   - `calls`: a line about the shell command that the call runs.
   - `working`: a paragraph for a sub-agent in the middle of its work.
   - An empty list: the runtime only reads the moment.
@@ -232,6 +235,9 @@ A **Hook** is `{event, kind, via, says, waits?, env?, keeps?}`:
   `"everything"` (the `always` of an Answer, §4.1) the harness keeps for the rest of the
   session. The runtime offers a person only these, beside the moment's own `suggestions`.
   An empty list: the harness keeps neither. Absent: both.
+- `room?` (version 17): the characters of one paragraph from this hook that the harness
+  keeps whole. The runtime fits its paragraph in them, and says a longer part as the command
+  that prints it. Absent: unbounded.
 
 ### 3.2 An adapter
 
@@ -759,7 +765,8 @@ A **Moment** is what `hook/read` answers:
 | `outcome?` | At a `turn_end`: `finished`, `failed`, `interrupted`. |
 | `continued` | At a `turn_end`: a hook already made this turn continue once. |
 | `person_exited` | At a `session_end`: the person left at the prompt. The harness's own word says that they are done. |
-| `prompt?` | At a `prompt`: the instruction, where the harness gives it. |
+| `prompt?` | At a `prompt`: the person's or Steery's instruction. Absent where the harness says that the prompt came from elsewhere: a background agent that reports, a scheduled loop. |
+| `forked_from?` | At a `session_start` that forks: the id of the conversation that it forked from (version 17). |
 | `context_left?` | 0 to 1. |
 | `model?`, `thinking?` | The model that it runs on now and how hard it thinks, in the harness's own words, where the moment says them. |
 | `failure?` | At a `turn_end` whose `outcome` is `failed`: the `Failure`, where the harness says why. |
@@ -1132,7 +1139,7 @@ without a lead takes words and picks where its mode is `tui` or `rpc`, or where 
 |---|---|---|
 | `state` | `state`: a whole LiveState. The plugin sends it when it changes, at most every 100 ms, and again after welcome. | nothing |
 | `moment` | `id, event, document`: a moment of a hook `via: door`. `event` is its `Hook.event`. `document` is the hook payload of the harness as the plugin got it. The runtime reads it with `hook/read` (§4.1). | `{t: "answer", id, ok: {say?, quiet?}}`, in order, for each conversation. `quiet: true`: the runtime tells this session nothing of Steery, as for a chat's session. A plugin that puts Steery's skill or words into the harness's own prompt leaves them out of that session. |
-| `settle` | `id, asked, parked, waiting, continued`: a turn of its own ended. The fields say that the turn asked its person something, was parked, waits on a Steery request, or already continued once. | `{t: "answer", id, ok: {say?}}`. Where `say` is present, the plugin makes the agent continue with it. The plugin waits 1 s for the answer. Then it lets the turn end. |
+| `settle` | `id, outcome?, continued`: a turn of its own ended. `outcome` (version 17) is how it ended: `finished`, `failed`, `interrupted`. `continued`: the plugin already continued it once. `asked`, `parked`, `waiting` stay readable for an older plugin; the runtime reads none of them and decides each from its own record. A plugin from version 17 sends none. | `{t: "answer", id, ok: {say?}}`. Where `say` is present, the plugin makes the agent continue with it. The plugin waits 1 s for the answer. Then it lets the turn end. |
 | `answer` | `id, ok` (the answer of the op, below), or `id, refused, error?`: the answer to an ask | |
 | `entries` | `after?, records: [Record]`: the records of the harness (§4.1), in the order that it appended them. `after` is the id of the record before the first one here. It is absent where they start at the first record of the conversation. | nothing |
 | `lost` | `why`: the copy cannot continue from `welcome.entries.after`. This connection carries no entries. | nothing |
@@ -1745,12 +1752,18 @@ Records go in batches of at most 8 MiB (`door::RECORDS_MAX`). This bound applies
 
 ## 10. Versions
 
-This is version 16. Its shapes are strict (§2): a program or a runtime rejects a field that it
+This is version 17. Its shapes are strict (§2): a program or a runtime rejects a field that it
 does not know. Thus any change to a shape, a method, a word or a meaning gets a new protocol
 number. It is never an extension of this version. The runtime offers every number that it
 speaks, and the program picks one. The major version of `steery-sdk` is the protocol that it
 speaks. `steery-sdk` speaks every version that is still offered (`steery_sdk::PROTOCOLS`).
 
+- **Version 17** is version 16 with Steery's words fitted to the harness (§3.1, §4.1): a
+  hook's `room`, `setup`'s `skill` in place of `reads_skills`, the hook kinds `sub_agent_end`
+  and `compacting`, and a moment's `forked_from`. Nothing else changed. A driver that picked
+  16 or older says `reads_skills` (`steery_sdk::serve` writes it from `skill`) and none of
+  the others, and the runtime sends it none. The door stays version 1: `settle` gains
+  `outcome`, and its `asked`, `parked`, `waiting` go unread.
 - **Version 16** is version 15 with a bare start (§4.2): `start`'s `bare`, and a harness's
   `bare` (§3.1). Nothing else changed. A driver that picked 15 or older says no `bare`, and
   the runtime sends it none.

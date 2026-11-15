@@ -2366,6 +2366,12 @@
           "$ref": "#/$defs/HookKind",
           "description": "What the moment is."
         },
+        "room": {
+          "description": "The characters of one paragraph from this hook that the harness keeps whole: the\nruntime fits its paragraph in them (version 17, [`crate::WORDS`]). Absent: unbounded.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
         "says": {
           "default": [],
           "description": "The paragraphs a moment of this event can give the agent.",
@@ -2498,6 +2504,16 @@
         {
           "const": "sub_agent_start",
           "description": "A sub-agent starts: no claim about a turn.",
+          "type": "string"
+        },
+        {
+          "const": "sub_agent_end",
+          "description": "A sub-agent ended (version 17, [`crate::WORDS`]).",
+          "type": "string"
+        },
+        {
+          "const": "compacting",
+          "description": "The harness is about to summarise the context. Its paragraph is the harness's\ninstruction for the summary (version 17, [`crate::WORDS`]).",
           "type": "string"
         },
         {
@@ -4069,6 +4085,10 @@
           ],
           "description": "At a `turn_end` whose `outcome` is `failed`: the cause, where the harness gives it."
         },
+        "forked_from": {
+          "description": "At a `session_start` that forks: the id of the conversation it forked from (version 17,\n[`crate::WORDS`]).",
+          "type": "string"
+        },
         "model": {
           "description": "The model that the conversation runs on now, where the moment gives it. This is\nstate, never an event.",
           "type": "string"
@@ -4091,7 +4111,7 @@
           "type": "boolean"
         },
         "prompt": {
-          "description": "At a `prompt`: the instruction.",
+          "description": "At a `prompt`: the person's or Steery's instruction. Absent where the harness says that\nthe prompt came from elsewhere: a background agent that reports, a scheduled loop.",
           "type": "string"
         },
         "sub_agent": {
@@ -4557,7 +4577,7 @@
           "description": "A turn that the copy itself ran ended.",
           "properties": {
             "asked": {
-              "description": "The turn asked its person something.",
+              "description": "Unread: the runtime decides it from its own record. A plugin from version 17 sends\nnone; an older plugin still may.",
               "type": "boolean"
             },
             "continued": {
@@ -4567,8 +4587,16 @@
             "id": {
               "type": "string"
             },
+            "outcome": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/TurnState"
+                }
+              ],
+              "description": "How the turn ended (version 17, [`crate::WORDS`]). Absent: the plugin does not say."
+            },
             "parked": {
-              "description": "The conversation was parked.",
+              "description": "Unread, as `asked`.",
               "type": "boolean"
             },
             "t": {
@@ -4576,16 +4604,13 @@
               "type": "string"
             },
             "waiting": {
-              "description": "The turn waits on a Steery request.",
+              "description": "Unread, as `asked`.",
               "type": "boolean"
             }
           },
           "required": [
             "t",
             "id",
-            "asked",
-            "parked",
-            "waiting",
             "continued"
           ],
           "type": "object"
@@ -5752,7 +5777,7 @@
         },
         {
           "const": "notice",
-          "description": "A notice that words wait for the agent.",
+          "description": "A notice that words wait for the agent. The runtime reads it from no driver; it stays\nso that a driver on version 16 or older still parses. A driver declares it no more.",
           "type": "string"
         },
         {
@@ -6104,13 +6129,13 @@
           "description": "The harness cuts the description of an MCP tool before its model reads it. So\n`session_start` gives the whole escalation policies.",
           "type": "boolean"
         },
-        "reads_skills": {
-          "description": "True: the harness reads Steery's skill from the entry that `setup/plan` lists. False:\nthe MCP handshake carries the whole skill.",
-          "type": "boolean"
+        "skill": {
+          "$ref": "#/$defs/SkillAt",
+          "description": "How the agent gets Steery's skill (version 17, [`crate::WORDS`]). A driver on version 16\nor older sends `reads_skills: bool` in its place, read here: true is `listed`, false is\n`handshake`."
         }
       },
       "required": [
-        "reads_skills",
+        "skill",
         "cuts_tool_text"
       ],
       "type": "object"
@@ -6157,6 +6182,26 @@
         "cont"
       ],
       "type": "string"
+    },
+    "SkillAt": {
+      "description": "How an agent gets Steery's skill (§3.1, version 17).",
+      "oneOf": [
+        {
+          "const": "handshake",
+          "description": "The MCP handshake carries the whole skill.",
+          "type": "string"
+        },
+        {
+          "const": "listed",
+          "description": "The harness lists the skill from the entry that `setup/plan` writes. The agent loads\nit when told.",
+          "type": "string"
+        },
+        {
+          "const": "prompt",
+          "description": "The harness's plugin puts the whole skill in the system prompt.",
+          "type": "string"
+        }
+      ]
     },
     "Source": {
       "description": "What an adapter makes a host from.",
@@ -6884,7 +6929,7 @@
       "type": "object"
     }
   },
-  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v16.json",
+  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v17.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "anyOf": [
     {
@@ -7458,6 +7503,9 @@
       "$ref": "#/$defs/SignalName"
     },
     {
+      "$ref": "#/$defs/SkillAt"
+    },
+    {
       "$ref": "#/$defs/Source"
     },
     {
@@ -7545,6 +7593,6 @@
       "$ref": "#/$defs/Way"
     }
   ],
-  "description": "Every shape of the Steery program protocol, version 16 (PROTOCOL.md), and the release manifest programs are published by.",
+  "description": "Every shape of the Steery program protocol, version 17 (PROTOCOL.md), and the release manifest programs are published by.",
   "title": "Protocol"
 }

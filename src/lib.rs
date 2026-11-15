@@ -42,9 +42,11 @@ use tokio::sync::mpsc;
 /// - 14 is 13 with the setup format `yaml`.
 /// - 15 is 14 with a need asked again (`setup/plan`'s `ask`, `done`'s `unset`).
 /// - 16 is 15 with a bare start (`start`'s `bare`, a harness's `bare`).
+/// - 17 is 16 with Steery's words fitted to the harness (a hook's `room`, `setup`'s `skill`,
+///   the hooks `sub_agent_end` and `compacting`, a moment's `forked_from`).
 ///
 /// A program answers with the newest of these that the runtime offers.
-pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
 
 /// The first version in which `say` has an `id` and `stop` can name one (PROTOCOL.md §4.2,
 /// §4.3). The runtime gives neither to a program that picked an older version.
@@ -87,6 +89,13 @@ pub const ASK: u32 = 15;
 /// (PROTOCOL.md §3.1, §4.2). A driver that picked an older version says no `bare`, and the
 /// runtime sends it none.
 pub const BARE: u32 = 16;
+
+/// The first version in which a hook can say `room`, `setup` says `skill` in place of
+/// `reads_skills`, a hook can be `sub_agent_end` or `compacting`, and a moment can carry
+/// `forked_from` (PROTOCOL.md §3.1, §4.1). A driver that picked an older version says none
+/// of them ([`wire::Initialized::said`] writes `reads_skills` for it), and the runtime sends
+/// it none.
+pub const WORDS: u32 = 17;
 
 /// The version that a program answers `initialize` with: the newest of [`PROTOCOLS`] in
 /// `offered`. None when the runtime offers none of them.
@@ -394,7 +403,11 @@ pub async fn serve<P: Program>(make: impl FnOnce(Notifier) -> P) -> std::io::Res
         if method == method::INITIALIZE {
             let answered = crate::params::<wire::InitializeParams>(params)
                 .and_then(|params| program.initialize(&params))
-                .and_then(result);
+                .and_then(|initialized| {
+                    initialized
+                        .said()
+                        .map_err(|e| Error::Invalid(e.to_string()))
+                });
             initialized |= answered.is_ok();
             give(&memo, &out, key, &id, answered);
             continue;

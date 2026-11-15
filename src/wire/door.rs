@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use super::harness::{LiveState, Record, SessionRef, Voice};
+use super::harness::{LiveState, Record, SessionRef, TurnState, Voice};
 
 /// The door version this crate speaks.
 pub const DOOR: u32 = 1;
@@ -77,14 +77,21 @@ pub enum PluginFrame {
     /// A turn that the copy itself ran ended.
     Settle {
         id: String,
-        /// The turn asked its person something.
-        asked: bool,
-        /// The conversation was parked.
-        parked: bool,
-        /// The turn waits on a Steery request.
-        waiting: bool,
+        /// How the turn ended (version 17, [`crate::WORDS`]). Absent: the plugin does not say.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        outcome: Option<TurnState>,
         /// The plugin already continued this turn once.
         continued: bool,
+        /// Unread: the runtime decides it from its own record. A plugin from version 17 sends
+        /// none; an older plugin still may.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        asked: bool,
+        /// Unread, as `asked`.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        parked: bool,
+        /// Unread, as `asked`.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        waiting: bool,
     },
     /// The answer to an ask: `ok` with the answer of the op, or `refused` with the line of the
     /// harness.

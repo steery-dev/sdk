@@ -86,6 +86,24 @@ impl Initialized {
             (Kind::Machine, _, _) => Err("an adapter must answer `machine`, not `harness`".into()),
         }
     }
+
+    /// The answer as the runtime of its `protocol` reads it. Before version 17
+    /// ([`crate::WORDS`]), a harness says `reads_skills: bool` in place of `skill`: true for
+    /// a skill that the harness itself reads (`listed`, `prompt`).
+    pub fn said(&self) -> Result<serde_json::Value, serde_json::Error> {
+        let mut said = serde_json::to_value(self)?;
+        if self.protocol < crate::WORDS
+            && let Some(harness) = &self.harness
+            && let Some(setup) = said
+                .pointer_mut("/harness/setup")
+                .and_then(serde_json::Value::as_object_mut)
+        {
+            setup.remove("skill");
+            let reads = harness.setup.skill != SkillAt::Handshake;
+            setup.insert("reads_skills".into(), reads.into());
+        }
+        Ok(said)
+    }
 }
 
 impl ProgramInfo {
@@ -463,9 +481,12 @@ pub struct CallMeta {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct SetupFacts {
-    /// True: the harness reads Steery's skill from the entry that `setup/plan` lists. False:
-    /// the MCP handshake carries the whole skill.
-    pub reads_skills: bool,
+    /// How the agent gets Steery's skill (version 17, [`crate::WORDS`]). A driver on version 16
+    /// or older sends `reads_skills: bool` in its place, read here: true is `listed`, false is
+    /// `handshake`.
+    #[serde(alias = "reads_skills", deserialize_with = "skill_at")]
+    #[cfg_attr(feature = "schema", schemars(with = "SkillAt"))]
+    pub skill: SkillAt,
     /// The harness cuts the description of an MCP tool before its model reads it. So
     /// `session_start` gives the whole escalation policies.
     pub cuts_tool_text: bool,
@@ -473,6 +494,35 @@ pub struct SetupFacts {
     /// make this time longer.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub call_bound: Option<u32>,
+}
+
+/// How an agent gets Steery's skill (§3.1, version 17).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(rename_all = "snake_case")]
+pub enum SkillAt {
+    /// The MCP handshake carries the whole skill.
+    Handshake,
+    /// The harness lists the skill from the entry that `setup/plan` writes. The agent loads
+    /// it when told.
+    Listed,
+    /// The harness's plugin puts the whole skill in the system prompt.
+    Prompt,
+}
+
+/// Reads `skill`, or the `reads_skills: bool` of a driver on version 16 or older.
+fn skill_at<'de, D: serde::Deserializer<'de>>(given: D) -> Result<SkillAt, D::Error> {
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Given {
+        Skill(SkillAt),
+        ReadsSkills(bool),
+    }
+    Ok(match Given::deserialize(given)? {
+        Given::Skill(skill) => skill,
+        Given::ReadsSkills(true) => SkillAt::Listed,
+        Given::ReadsSkills(false) => SkillAt::Handshake,
+    })
 }
 
 /// A driver's one-shot reader.

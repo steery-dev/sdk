@@ -41,9 +41,10 @@ use tokio::sync::mpsc;
 /// - 13 is 12 with a permission hook's `keeps`.
 /// - 14 is 13 with the setup format `yaml`.
 /// - 15 is 14 with a need asked again (`setup/plan`'s `ask`, `done`'s `unset`).
+/// - 16 is 15 with a bare start (`start`'s `bare`, a harness's `bare`).
 ///
 /// A program answers with the newest of these that the runtime offers.
-pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 
 /// The first version in which `say` has an `id` and `stop` can name one (PROTOCOL.md §4.2,
 /// §4.3). The runtime gives neither to a program that picked an older version.
@@ -81,6 +82,11 @@ pub const YAML: u32 = 14;
 /// (PROTOCOL.md §4.1). The runtime sends no `ask` to a driver that picked an older version,
 /// and that driver names no `unset`.
 pub const ASK: u32 = 15;
+
+/// The first version in which a harness can say `bare` and `start` can carry `bare`
+/// (PROTOCOL.md §3.1, §4.2). A driver that picked an older version says no `bare`, and the
+/// runtime sends it none.
+pub const BARE: u32 = 16;
 
 /// The version that a program answers `initialize` with: the newest of [`PROTOCOLS`] in
 /// `offered`. None when the runtime offers none of them.

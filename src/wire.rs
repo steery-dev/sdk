@@ -387,6 +387,10 @@ pub struct HarnessInfo {
     /// Every moment of the harness that the runtime reads.
     #[serde(default)]
     pub hooks: Vec<harness::Hook>,
+    /// The driver maps `start`'s `bare` (version 16, [`crate::BARE`]). The runtime sends `bare`
+    /// only to a driver that says so. A driver that picked an older version says false.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub bare: bool,
 }
 
 /// Who writes the lines of a session: the record of what the session does (§3.1).

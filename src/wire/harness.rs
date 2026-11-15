@@ -1464,6 +1464,23 @@ pub struct Start {
     /// Folders outside `cwd` that the turn reads.
     #[serde(default)]
     pub reads: Vec<PathBuf>,
+    /// Start or continue the conversation bare (version 16, [`crate::BARE`]). The runtime sends
+    /// it only to a driver that says `HarnessInfo.bare`. Absent: the harness starts as it
+    /// always does.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bare: Option<Bare>,
+}
+
+/// Start or continue this conversation on `system` alone: it replaces the harness's own system
+/// prompt. None of the person's rules, global or project context files (`AGENTS.md`,
+/// `CLAUDE.md`, `~/.omp/agent/*`), skills or MCP servers load. Its only tool is a shell, to run
+/// `steery`. Steery's own door and hooks stay.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[serde(deny_unknown_fields)]
+pub struct Bare {
+    /// The whole system prompt of the conversation.
+    pub system: String,
 }
 
 /// A turn's launch plan, which the runtime starts through the operating-system adapter.

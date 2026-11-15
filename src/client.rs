@@ -535,6 +535,7 @@ mod tests {
                         touches: false,
                     },
                     hooks: Vec::new(),
+                    bare: false,
                 })),
                 machine: None,
                 settings: Vec::new(),

@@ -165,6 +165,7 @@ from nothing else. These surfaces are its apps, its web pages and its cards.
 | `reader?` | The one-shot reader (§4.2): `{sealed, known, unnamed}`. `sealed` says which of `tools`, `mcp`, `instructions`, `extensions`, `history` the reader shuts out (true) or still reaches (false). The runtime tells a person, and tries the most sealed reader first. `known`: models that the reader runs but that `models` does not always list. `unnamed`: the reader runs the harness's own model when it gets none. Absent: the driver has no reader. |
 | `facts` | What the holder rule and offers read, below. |
 | `hooks` | Every moment of the harness that the runtime reads (§4.1): `[Hook]`. |
+| `bare?` | The driver maps `start`'s `bare` (§4.2) for each act. Absent: false, and the runtime sends no `bare` (version 16). |
 
 `facts` is:
 
@@ -798,7 +799,7 @@ An empty Answer says nothing. `hook/answer` turns it into what the harness reads
 | `held` | `{external_id}` | a Holder, or `{look: {transcripts, strays, beyond?}}` | none |
 | `idle` | `{external_id}` | `{sample?: Sample}` | none |
 | `models` | `{}` | `{models: [Model], unlisted?: {thinking}, watch: [path], signed_in?: bool}` | `no-binary`, `refused` |
-| `start` | `{act, external_id?, cwd, folder, worktree, model?, thinking?, reads}` | `{argv, env, cwd, stdin: "words" \| "none" \| "held", inbox}` | `not-found`, `no-place`, `model-missing`, `selection-unsupported`, `no-binary`, `start-failed` |
+| `start` | `{act, external_id?, cwd, folder, worktree, model?, thinking?, reads, bare?}` | `{argv, env, cwd, stdin: "words" \| "none" \| "held", inbox}` | `not-found`, `no-place`, `model-missing`, `selection-unsupported`, `no-binary`, `start-failed` |
 | `turn/read` | `{turn, stream: "stdout" \| "stderr", line, delivery?}` | `{named?, took?, ended?: {state, error?}, refused?, events: [Event], title?}` | none |
 | `stop` | `{external_id, holder, say?}` | `{stopped, proof?}` | `not-stopped`, `other-turn` |
 | `receipt/mark` | `{external_id}` | `{mark}` | `selection-unsupported` |
@@ -889,6 +890,13 @@ outside `cwd` that the turn reads. `worktree` asks for a new worktree for a fork
 conversation, where `facts.worktrees`. `start` first checks what it can check without a
 process (omp: that the model is an exact entry of omp's own list). Where that check fails,
 it refuses before anything runs.
+
+`bare` (version 16) is `{system}`: start or continue this conversation on `system` alone. It
+replaces the harness's own system prompt. None of the person's rules, global or project
+context files (`AGENTS.md`, `CLAUDE.md`, `~/.omp/agent/*`), skills or MCP servers load. Its
+only tool is a shell, to run `steery`. Steery's own door and hooks stay. A driver maps it to
+the harness's own flags for a new conversation, a fork and a continue alike. The runtime
+sends `bare` only to a driver that picked 16 or newer and says `bare: true` in `initialize`.
 
 With `stdin: "held"`, the runtime starts the process with a standard input that never ends
 (`process/start` `held`). It discards the standard output of the process. When a copy says
@@ -1737,12 +1745,15 @@ Records go in batches of at most 8 MiB (`door::RECORDS_MAX`). This bound applies
 
 ## 10. Versions
 
-This is version 15. Its shapes are strict (§2): a program or a runtime rejects a field that it
+This is version 16. Its shapes are strict (§2): a program or a runtime rejects a field that it
 does not know. Thus any change to a shape, a method, a word or a meaning gets a new protocol
 number. It is never an extension of this version. The runtime offers every number that it
 speaks, and the program picks one. The major version of `steery-sdk` is the protocol that it
 speaks. `steery-sdk` speaks every version that is still offered (`steery_sdk::PROTOCOLS`).
 
+- **Version 16** is version 15 with a bare start (§4.2): `start`'s `bare`, and a harness's
+  `bare` (§3.1). Nothing else changed. A driver that picked 15 or older says no `bare`, and
+  the runtime sends it none.
 - **Version 15** is version 14 with a need asked again (§4.1): `setup/plan`'s `ask`, and
   `done`'s `unset`. Nothing else changed. The runtime sends no `ask` to a driver that picked
   14 or older, and such a driver names no `unset`.

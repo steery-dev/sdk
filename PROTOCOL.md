@@ -1123,7 +1123,7 @@ without a lead takes words and picks where its mode is `tui` or `rpc`, or where 
 | Frame | Fields | The runtime answers |
 |---|---|---|
 | `state` | `state`: a whole LiveState. The plugin sends it when it changes, at most every 100 ms, and again after welcome. | nothing |
-| `moment` | `id, event, document`: a moment of a hook `via: door`. `event` is its `Hook.event`. `document` is the hook payload of the harness as the plugin got it. The runtime reads it with `hook/read` (§4.1). | `{t: "answer", id, ok: {say?}}`, in order, for each conversation |
+| `moment` | `id, event, document`: a moment of a hook `via: door`. `event` is its `Hook.event`. `document` is the hook payload of the harness as the plugin got it. The runtime reads it with `hook/read` (§4.1). | `{t: "answer", id, ok: {say?, quiet?}}`, in order, for each conversation. `quiet: true`: the runtime tells this session nothing of Steery, as for a chat's session. A plugin that puts Steery's skill or words into the harness's own prompt leaves them out of that session. |
 | `settle` | `id, asked, parked, waiting, continued`: a turn of its own ended. The fields say that the turn asked its person something, was parked, waits on a Steery request, or already continued once. | `{t: "answer", id, ok: {say?}}`. Where `say` is present, the plugin makes the agent continue with it. The plugin waits 1 s for the answer. Then it lets the turn end. |
 | `answer` | `id, ok` (the answer of the op, below), or `id, refused, error?`: the answer to an ask | |
 | `entries` | `after?, records: [Record]`: the records of the harness (§4.1), in the order that it appended them. `after` is the id of the record before the first one here. It is absent where they start at the first record of the conversation. | nothing |

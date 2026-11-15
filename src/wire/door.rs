@@ -237,6 +237,10 @@ pub struct Spoken {
     /// A paragraph for the agent. After a settle, the plugin uses it to make the agent continue.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub say: Option<String>,
+    /// The runtime tells this session nothing of Steery: it is a chat's session. A plugin that
+    /// puts Steery's skill or words into the harness's own prompt leaves them out of it.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub quiet: bool,
 }
 
 /// What the runtime asks of a copy, by `op`.

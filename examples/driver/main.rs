@@ -87,6 +87,7 @@ impl Program for Example {
                     touches: false,
                 },
                 hooks: Vec::new(),
+                bare: false,
             })),
             machine: None,
             settings: Vec::new(),

@@ -515,7 +515,7 @@ mod tests {
                         call_meta: None,
                     },
                     setup: wire::SetupFacts {
-                        reads_skills: false,
+                        skill: wire::SkillAt::Handshake,
                         cuts_tool_text: false,
                         call_bound: None,
                     },

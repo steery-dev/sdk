@@ -35,6 +35,10 @@ pub struct Hook {
     /// driver that picked a version older than [`crate::KEEPS`] leaves it absent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub keeps: Option<Vec<Kept>>,
+    /// The characters of one paragraph from this hook that the harness keeps whole: the
+    /// runtime fits its paragraph in them (version 17, [`crate::WORDS`]). Absent: unbounded.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub room: Option<u32>,
 }
 
 /// A standing scope that a harness keeps for the rest of the session, where a person
@@ -72,6 +76,11 @@ pub enum HookKind {
     Notification,
     /// A sub-agent starts: no claim about a turn.
     SubAgentStart,
+    /// A sub-agent ended (version 17, [`crate::WORDS`]).
+    SubAgentEnd,
+    /// The harness is about to summarise the context. Its paragraph is the harness's
+    /// instruction for the summary (version 17, [`crate::WORDS`]).
+    Compacting,
     /// The model of the conversation changed. This moment makes no claim about a turn, or
     /// about other state of the conversation.
     Changed,
@@ -96,7 +105,8 @@ pub enum Says {
     /// Steery's paragraph for the conversation. At a `turn_end`, it makes the agent
     /// continue. At a `sub_agent_start`, it goes to the sub-agent.
     Context,
-    /// A notice that words wait for the agent.
+    /// A notice that words wait for the agent. The runtime reads it from no driver; it stays
+    /// so that a driver on version 16 or older still parses. A driver declares it no more.
     Notice,
     /// A line about the shell command a call runs.
     Calls,
@@ -1004,9 +1014,14 @@ pub struct Moment {
     /// At a `session_end`: the person exited at the prompt.
     #[serde(default)]
     pub person_exited: bool,
-    /// At a `prompt`: the instruction.
+    /// At a `prompt`: the person's or Steery's instruction. Absent where the harness says that
+    /// the prompt came from elsewhere: a background agent that reports, a scheduled loop.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prompt: Option<String>,
+    /// At a `session_start` that forks: the id of the conversation it forked from (version 17,
+    /// [`crate::WORDS`]).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub forked_from: Option<String>,
     /// The share of the context window left, 0 to 1.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub context_left: Option<f64>,

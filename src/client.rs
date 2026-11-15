@@ -515,7 +515,7 @@ mod tests {
                         call_meta: None,
                     },
                     setup: wire::SetupFacts {
-                        skill: wire::SkillAt::Handshake,
+                        skill: wire::SkillAt::Listed,
                         cuts_tool_text: false,
                         call_bound: None,
                     },
@@ -577,7 +577,8 @@ mod tests {
     /// to it; offered neither, it is refused. Offered 10, it names each listing, and given
     /// a listing's cursor it answers only what changed since: the whole listing read back
     /// from that is the one it would give whole. Offered less, it lists whole and names
-    /// nothing.
+    /// nothing. Its skill reads `listed` at every version: as `skill` from 17, as
+    /// `reads_skills: true` before.
     #[tokio::test]
     async fn a_program_answers_what_its_version_has_and_is_never_asked_what_it_has_not() {
         if std::env::var_os(PROGRAM).is_some() {
@@ -618,6 +619,13 @@ mod tests {
         let initialized = new.initialize(&offer(vec![3, 4])).await.unwrap();
         assert_eq!(initialized.protocol, 4);
         assert_eq!(new.protocol(), Some(4));
+        let skill = |initialized: &wire::Initialized| {
+            initialized
+                .harness
+                .as_ref()
+                .map(|harness| harness.setup.skill)
+        };
+        assert_eq!(skill(&initialized), Some(wire::SkillAt::Listed));
         let raw = new
             .call(method::MCP_LIST, json!({}), Duration::from_secs(30))
             .await
@@ -669,6 +677,7 @@ mod tests {
             .unwrap();
         assert_eq!(Some(&initialized.protocol), crate::PROTOCOLS.last());
         assert!(initialized.protocol >= crate::LIST_CHANGES);
+        assert_eq!(skill(&initialized), Some(wire::SkillAt::Listed));
         let first = lists
             .ask::<method::SessionsList>(&wire::harness::List::default())
             .await

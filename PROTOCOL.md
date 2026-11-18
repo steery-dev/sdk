@@ -1,10 +1,10 @@
-# The program protocol, version 17
+# The program protocol, version 18
 
 This document is the one contract between Steery's runtime (`steery`) and every **driver**
 and **adapter**. It is also the contract between the control of the runtime and a remote
 host (§6). It is published under MIT in [steery-dev/sdk](https://github.com/steery-dev/sdk)
 with `steery-sdk`, the Rust crate that implements it. It is also published with the JSON
-Schema [`schema/protocol-v17.json`](schema/protocol-v17.json), which holds every shape below.
+Schema [`schema/protocol-v18.json`](schema/protocol-v18.json), which holds every shape below.
 Steery's own drivers ([steery-dev/drivers](https://github.com/steery-dev/drivers)) and
 adapters ([steery-dev/adapters](https://github.com/steery-dev/adapters)) are programs like
 any other. The runtime knows no program by its id, and every program is added in the same
@@ -805,7 +805,7 @@ An empty Answer says nothing. `hook/answer` turns it into what the harness reads
 |---|---|---|---|
 | `held` | `{external_id}` | a Holder, or `{look: {transcripts, strays, beyond?}}` | none |
 | `idle` | `{external_id}` | `{sample?: Sample}` | none |
-| `models` | `{}` | `{models: [Model], unlisted?: {thinking}, watch: [path], signed_in?: bool}` | `no-binary`, `refused` |
+| `models` | `{}` | `{models: [Model], unlisted?: {thinking}, watch: [path], signed_in?: bool, signed_in_at?: time}` | `no-binary`, `refused` |
 | `start` | `{act, external_id?, cwd, folder, worktree, model?, thinking?, reads, bare?}` | `{argv, env, cwd, stdin: "words" \| "none" \| "held", inbox}` | `not-found`, `no-place`, `model-missing`, `selection-unsupported`, `no-binary`, `start-failed` |
 | `turn/read` | `{turn, stream: "stdout" \| "stderr", line, delivery?}` | `{named?, took?, ended?: {state, error?}, refused?, events: [Event], title?}` | none |
 | `stop` | `{external_id, holder, say?}` | `{stopped, proof?}` | `not-stopped`, `other-turn` |
@@ -879,6 +879,13 @@ where the harness says it.
   before it. Thus a person who logged in outside Steery is not held signed out until a run
   succeeds. A driver that can tell lists its sign-in files in `watch`, so the runtime sees a
   login at once.
+- `signed_in_at` says when the harness's own account last signed in here, as the harness
+  keeps it: when its credentials were last written (Claude Code: its keychain item or
+  `.credentials.json`). It comes only with `signed_in: true`, and is absent where the driver
+  cannot tell. A login dated after a failure to sign in clears that failure, as a listing
+  that turns `true` does. Thus a person who signs in again while the harness said `true` all
+  along (a token that the provider revoked) is not held signed out until a run succeeds.
+  Without it, the runtime dates a login by the first listing that said `true`.
 - The driver refuses `no-binary` for a harness that is not on this machine. It refuses
   `refused`, with the line of the harness, for a list that it cannot read (its person must
   sign in first). The runtime keeps the last list.
@@ -1752,12 +1759,15 @@ Records go in batches of at most 8 MiB (`door::RECORDS_MAX`). This bound applies
 
 ## 10. Versions
 
-This is version 17. Its shapes are strict (§2): a program or a runtime rejects a field that it
+This is version 18. Its shapes are strict (§2): a program or a runtime rejects a field that it
 does not know. Thus any change to a shape, a method, a word or a meaning gets a new protocol
 number. It is never an extension of this version. The runtime offers every number that it
 speaks, and the program picks one. The major version of `steery-sdk` is the protocol that it
 speaks. `steery-sdk` speaks every version that is still offered (`steery_sdk::PROTOCOLS`).
 
+- **Version 18** is version 17 with when a harness last signed in (§4.2): `models`'
+  `signed_in_at`. Nothing else changed. A driver that picked 17 or older says none, and the
+  runtime dates a login by the first listing that said `signed_in: true`.
 - **Version 17** is version 16 with Steery's words fitted to the harness (§3.1, §4.1): a
   hook's `room`, `setup`'s `skill` in place of `reads_skills`, the hook kinds `sub_agent_end`
   and `compacting`, and a moment's `forked_from`. Nothing else changed. A driver that picked

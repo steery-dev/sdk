@@ -1341,6 +1341,12 @@ pub struct Models {
     /// cannot tell.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub signed_in: Option<bool>,
+    /// When the harness's own account last signed in here, as the harness keeps it: when
+    /// its credentials were last written. Only with `signed_in: true`. Absent where the driver
+    /// cannot tell, and from a driver that picked a version older than 18
+    /// ([`crate::SIGNED_IN_AT`]).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signed_in_at: Option<u64>,
 }
 
 /// What a model takes when the harness does not list it.

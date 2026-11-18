@@ -4015,6 +4015,12 @@
           "description": "Whether the harness's own account is signed in here at the time of this list, as\nthe harness says. `true`: signed in. `false`: not signed in. Absent where the driver\ncannot tell.",
           "type": "boolean"
         },
+        "signed_in_at": {
+          "description": "When the harness's own account last signed in here, as the harness keeps it: when\nits credentials were last written. Only with `signed_in: true`. Absent where the driver\ncannot tell, and from a driver that picked a version older than 18\n([`crate::SIGNED_IN_AT`]).",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
         "unlisted": {
           "allOf": [
             {
@@ -6929,7 +6935,7 @@
       "type": "object"
     }
   },
-  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v17.json",
+  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v18.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "anyOf": [
     {
@@ -7593,6 +7599,6 @@
       "$ref": "#/$defs/Way"
     }
   ],
-  "description": "Every shape of the Steery program protocol, version 17 (PROTOCOL.md), and the release manifest programs are published by.",
+  "description": "Every shape of the Steery program protocol, version 18 (PROTOCOL.md), and the release manifest programs are published by.",
   "title": "Protocol"
 }

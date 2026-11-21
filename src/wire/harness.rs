@@ -637,8 +637,8 @@ pub enum Event {
         /// Version 19 ([`crate::CALL_ERROR`]): where `ok` is false, the failure as the
         /// call's tool said it, read from the harness's record. It is the result's text
         /// without what the harness wrote round it (a prefix of its own, the arguments it
-        /// echoed back, its docs of the tool, a person's words), and whole where the harness
-        /// cut the result's lines. Where the harness refused the call before its tool ran (a
+        /// echoed back, its docs of the tool, a person's words), with each line the harness
+        /// cut made whole where the harness kept a whole copy. Where the harness refused the call before its tool ran (a
         /// person's denial), it is the harness's own line that says so, without the person's
         /// words. Absent where the driver cannot tell those apart, where `ok` is true, and in
         /// an older version: the runtime then reads the `tool` words of the call.

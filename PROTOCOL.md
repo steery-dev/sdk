@@ -724,8 +724,9 @@ An **Event** is one of:
   The driver reads it from the same record as the result:
   - It leaves out what the harness wrote round the tool's words: a prefix of its own, the
     arguments that it echoed back, its docs of the tool.
-  - It is whole where the harness cut the lines of the result, from where the harness kept
-    them whole (omp's trace of a shell call).
+  - Each line that the harness cut is made whole from where the harness kept it whole
+    (omp's trace of a shell call, which keeps only the newest of a long run). A line that
+    no whole copy holds stays as the harness cut it.
   - Where the harness refused the call before its tool ran, it is the harness's own line
     that says so, never the words that a person gave with the refusal.
 

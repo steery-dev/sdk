@@ -45,9 +45,10 @@ use tokio::sync::mpsc;
 /// - 17 is 16 with Steery's words fitted to the harness (a hook's `room`, `setup`'s `skill`,
 ///   the hooks `sub_agent_end` and `compacting`, a moment's `forked_from`).
 /// - 18 is 17 with when a harness last signed in (`models`' `signed_in_at`).
+/// - 19 is 18 with a failed call's own words (`call_ended`'s `error`).
 ///
 /// A program answers with the newest of these that the runtime offers.
-pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+pub const PROTOCOLS: &[u32] = &[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
 
 /// The first version in which `say` has an `id` and `stop` can name one (PROTOCOL.md §4.2,
 /// §4.3). The runtime gives neither to a program that picked an older version.
@@ -102,6 +103,12 @@ pub const WORDS: u32 = 17;
 /// account last signed in here (PROTOCOL.md §4.2). A driver that picked an older version says
 /// none, and the runtime dates a login by the first listing that said `signed_in`.
 pub const SIGNED_IN_AT: u32 = 18;
+
+/// The first version in which `call_ended` can say `error`: a failed call's failure as its
+/// tool said it, without the harness's own words round it and uncut (PROTOCOL.md §4.1). A
+/// driver that picked an older version says none, and the runtime reads the call's `tool`
+/// words.
+pub const CALL_ERROR: u32 = 19;
 
 /// The version that a program answers `initialize` with: the newest of [`PROTOCOLS`] in
 /// `offered`. None when the runtime offers none of them.

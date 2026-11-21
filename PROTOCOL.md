@@ -4,7 +4,7 @@ This document is the one contract between Steery's runtime (`steery`) and every 
 and **adapter**. It is also the contract between the control of the runtime and a remote
 host (§6). It is published under MIT in [steery-dev/sdk](https://github.com/steery-dev/sdk)
 with `steery-sdk`, the Rust crate that implements it. It is also published with the JSON
-Schema [`schema/protocol-v18.json`](schema/protocol-v18.json), which holds every shape below.
+Schema [`schema/protocol-v19.json`](schema/protocol-v19.json), which holds every shape below.
 Steery's own drivers ([steery-dev/drivers](https://github.com/steery-dev/drivers)) and
 adapters ([steery-dev/adapters](https://github.com/steery-dev/adapters)) are programs like
 any other. The runtime knows no program by its id, and every program is added in the same
@@ -662,7 +662,7 @@ An **Event** is one of:
 | `words` | `at, id, voice: person \| agent \| thought \| tool \| summary, text, message?, call?, clips: [Clip]` |
 | `rollback` | `at, turns`: the harness took back the newest `turns` person instructions |
 | `call_began` | `at, call: Call` |
-| `call_ended` | `at, id, ok, chars, tail?, waited?` (`waited`: version 6) |
+| `call_ended` | `at, id, ok, chars, tail?, waited?, error?` (`waited`: version 6; `error`: version 19) |
 | `tokens` | `at, count: response \| total, response?, model?, input, cached, cache_write?, output, reasoning, context_left?` |
 | `model` | `at, model, provider?, thinking?` |
 | `sub_agent` | `at, external_id, call?, state?: running \| finished \| failed \| interrupted, error?` |
@@ -719,6 +719,19 @@ An **Event** is one of:
   `waited` is the harness's own record of what the call waited on, read from its
   transcript. It is empty where the call waited on nothing that it can name. Steery counts
   the time that a call waited as time spent on the work that it waited on.
+
+  `error` (version 19) is the failure of a call whose `ok` is false, as its tool said it.
+  The driver reads it from the same record as the result:
+  - It leaves out what the harness wrote round the tool's words: a prefix of its own, the
+    arguments that it echoed back, its docs of the tool.
+  - Each line that the harness cut is made whole from where the harness kept it whole
+    (omp's trace of a shell call, which keeps only the newest of a long run). A line that
+    no whole copy holds stays as the harness cut it.
+  - Where the harness refused the call before its tool ran, it is the harness's own line
+    that says so, never the words that a person gave with the refusal.
+
+  It is absent where the driver cannot tell the tool's words apart, and when `ok` is true.
+  Then the runtime reads the call's `tool` words. Steery keeps only its own words of it.
 - `tokens`: `input` counts every token read, cache reads and writes included. `cached` and
   `cache_write?` are parts of `input` (absent: the harness does not say). `reasoning` is part
   of `output`. `count: response` is the count of one response alone, which `response` names.
@@ -1759,12 +1772,15 @@ Records go in batches of at most 8 MiB (`door::RECORDS_MAX`). This bound applies
 
 ## 10. Versions
 
-This is version 18. Its shapes are strict (§2): a program or a runtime rejects a field that it
+This is version 19. Its shapes are strict (§2): a program or a runtime rejects a field that it
 does not know. Thus any change to a shape, a method, a word or a meaning gets a new protocol
 number. It is never an extension of this version. The runtime offers every number that it
 speaks, and the program picks one. The major version of `steery-sdk` is the protocol that it
 speaks. `steery-sdk` speaks every version that is still offered (`steery_sdk::PROTOCOLS`).
 
+- **Version 19** is version 18 with a failed call's own words (§4.1): `call_ended`'s
+  `error`. Nothing else changed. A driver that picked 18 or older says none, and the runtime
+  reads the call's `tool` words.
 - **Version 18** is version 17 with when a harness last signed in (§4.2): `models`'
   `signed_in_at`. Nothing else changed. A driver that picked 17 or older says none, and the
   runtime dates a login by the first listing that said `signed_in: true`.

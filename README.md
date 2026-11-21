@@ -10,7 +10,7 @@ holds that protocol and the tools to write a program.
 |---|---|
 | [PROTOCOL.md](PROTOCOL.md) | The protocol: every message, shape, refusal word and bound. |
 | [`steery-sdk`](src/lib.rs) | The Rust crate: the wire types, `serve` (a program's loop), the runtime's client, and the release manifest. |
-| [schema/protocol-v18.json](schema/protocol-v18.json) | Every shape as JSON Schema. |
+| [schema/protocol-v19.json](schema/protocol-v19.json) | Every shape as JSON Schema. |
 | [examples/driver](examples/driver) | The smallest driver. |
 | [examples/adapter](examples/adapter) | The smallest adapter that makes hosts. |
 

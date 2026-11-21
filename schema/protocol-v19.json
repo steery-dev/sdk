@@ -1117,6 +1117,10 @@
               "minimum": 0,
               "type": "integer"
             },
+            "error": {
+              "description": "Version 19 ([`crate::CALL_ERROR`]): where `ok` is false, the failure as the\ncall's tool said it, read from the harness's record. It is the result's text\nwithout what the harness wrote round it (a prefix of its own, the arguments it\nechoed back, its docs of the tool, a person's words), and whole where the harness\ncut the result's lines. Where the harness refused the call before its tool ran (a\nperson's denial), it is the harness's own line that says so, without the person's\nwords. Absent where the driver cannot tell those apart, where `ok` is true, and in\nan older version: the runtime then reads the `tool` words of the call.",
+              "type": "string"
+            },
             "id": {
               "type": "string"
             },
@@ -6935,7 +6939,7 @@
       "type": "object"
     }
   },
-  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v18.json",
+  "$id": "https://raw.githubusercontent.com/steery-dev/sdk/main/schema/protocol-v19.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "anyOf": [
     {
